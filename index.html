@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Create Video Campaign</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f7f9fc;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+      }
+      .container {
+        background: #ffffff;
+        padding: 30px 40px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+        max-width: 1000px;
+        width: 100%;
+      }
+      h2 {
+        text-align: center;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 25px;
+      }
+      .form-grid {
+        display: flex;
+        gap: 30px;
+      }
+      .form-left,
+      .form-right {
+        flex: 1;
+      }
+      .form-right {
+        display: flex;
+        flex-direction: column;
+        justify-content: stretch;
+      }
+      .form-right > div {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      label {
+        display: block;
+        margin-top: 15px;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #34495e;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #dfe6e9;
+        border-radius: 8px;
+        font-size: 16px;
+        background-color: #fdfdfd;
+        box-sizing: border-box;
+        transition: border 0.3s ease;
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: #3498db;
+        outline: none;
+      }
+      textarea {
+        height: 100%;
+        resize: none;
+      }
+      button {
+        margin-top: 25px;
+        padding: 12px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+        transition: background 0.3s ease;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      .textarea-group {
+        display: flex;
+        gap: 20px;
+        height: 100%;
+      }
+      .textarea-box {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Create Sponsored Brands Video Campaign</h2>
+      <form id="campaignForm">
+        <div class="form-grid">
+          <div class="form-left">
+            <label for="country">Country</label>
+            <select id="country" required>
+              <option value="US">United States</option>
+              <option value="CA">Canada</option>
+            </select>
+
+            <label for="productName">Product Name</label>
+            <input type="text" id="productName" required />
+
+            <label for="sku">SKU</label>
+            <input type="text" id="sku" required />
+
+            <label for="asin">ASIN</label>
+            <input type="text" id="asin" required />
+
+            <label for="portfolioId">Portfolio ID (optional)</label>
+            <input type="text" id="portfolioId" />
+
+            <label for="videoId">Video Media ID</label>
+            <input type="text" id="videoId" required />
+          </div>
+
+          <div class="form-right">
+            <div class="textarea-group">
+              <div class="textarea-box">
+                <label for="keywords">Keywords (one per line)</label>
+                <textarea id="keywords" required></textarea>
+              </div>
+              <div class="textarea-box">
+                <label for="negativeKeywords"
+                  >Negative Keywords (one per line)</label
+                >
+                <textarea id="negativeKeywords"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button type="submit">Download Excel</button>
+      </form>
+    </div>
+
+    <script>
+      document
+        .getElementById("campaignForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const XLSX = await import(
+            "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.mjs"
+          );
+
+          const country = document.getElementById("country").value;
+          const productName = document.getElementById("productName").value;
+          const sku = document.getElementById("sku").value;
+          const asin = document.getElementById("asin").value;
+          const portfolioId = document.getElementById("portfolioId").value;
+          const videoId = document.getElementById("videoId").value;
+          const keywords = document
+            .getElementById("keywords")
+            .value.trim()
+            .split("\n")
+            .filter(Boolean);
+          const negativeKeywords = document
+            .getElementById("negativeKeywords")
+            .value.trim()
+            .split("\n")
+            .filter(Boolean);
+
+          const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+          const campaignId = `${productName} ${sku} Video Ads Broad`;
+          const brandEntityId =
+            country === "US" ? "ENTITYCQP7AL92VN6L" : "ENTITY2DMN2Z7IO7RFX";
+
+          const data = [
+            {
+              Product: "Sponsored Brands",
+              Entity: "Campaign",
+              Operation: "Create",
+              "Campaign Id": campaignId,
+              "Draft Campaign Id": campaignId,
+              "Portfolio Id": portfolioId,
+              "Campaign Name": campaignId,
+              "Start Date": today,
+              "End Date": "",
+              State: "Enabled",
+              "Budget Type": "Daily",
+              Budget: 10,
+              "Bid Optimization": "Auto",
+              "Bid Multiplier": "",
+              Bid: "",
+              "Keyword Text": "",
+              "Match Type": "",
+              "Product Targeting Expression": "",
+              "Ad Format": "video",
+              "Landing Page URL": "",
+              "Landing Page asins": "",
+              "Brand Entity Id": brandEntityId,
+              "Brand Name": "BlueStars",
+              "Brand Logo Asset Id": "",
+              "Brand Logo URL":
+                "https://m.media-amazon.com/images/S/land-na-9d5791dcf3af/or/B0CDFNLXWY",
+              "Creative Headline": "",
+              "Creative asins": asin,
+              "Video Media Ids": videoId,
+              "Creative Type": "video",
+            },
+            ...keywords.map((kw) => ({
+              Product: "Sponsored Brands",
+              Entity: "Keyword",
+              Operation: "Create",
+              "Campaign Id": campaignId,
+              "Draft Campaign Id": campaignId,
+              "Portfolio Id": "",
+              "Campaign Name": campaignId,
+              "Start Date": "",
+              "End Date": "",
+              State: "Enabled",
+              "Budget Type": "",
+              Budget: "",
+              "Bid Optimization": "",
+              "Bid Multiplier": "",
+              Bid: 0.25,
+              "Keyword Text": kw,
+              "Match Type": "phrase",
+              "Product Targeting Expression": "",
+              "Ad Format": "",
+              "Landing Page URL": "",
+              "Landing Page asins": "",
+              "Brand Entity Id": "",
+              "Brand Name": "",
+              "Brand Logo Asset Id": "",
+              "Brand Logo URL": "",
+              "Creative Headline": "",
+              "Creative asins": "",
+              "Video Media Ids": "",
+              "Creative Type": "",
+            })),
+            ...negativeKeywords.map((kw) => ({
+              Product: "Sponsored Brands",
+              Entity: "Negative Keyword",
+              Operation: "Create",
+              "Campaign Id": campaignId,
+              "Draft Campaign Id": campaignId,
+              "Portfolio Id": "",
+              "Campaign Name": campaignId,
+              "Start Date": "",
+              "End Date": "",
+              State: "Enabled",
+              "Budget Type": "",
+              Budget: "",
+              "Bid Optimization": "",
+              "Bid Multiplier": "",
+              Bid: "",
+              "Keyword Text": kw,
+              "Match Type": "negativePhrase",
+              "Product Targeting Expression": "",
+              "Ad Format": "",
+              "Landing Page URL": "",
+              "Landing Page asins": "",
+              "Brand Entity Id": "",
+              "Brand Name": "",
+              "Brand Logo Asset Id": "",
+              "Brand Logo URL": "",
+              "Creative Headline": "",
+              "Creative asins": "",
+              "Video Media Ids": "",
+              "Creative Type": "",
+            })),
+          ];
+
+          const worksheet = XLSX.utils.json_to_sheet(data);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Campaign");
+          XLSX.writeFile(workbook, "Video_Campaign_Upload_Template.xlsx");
+        });
+    </script>
+  </body>
+</html>
