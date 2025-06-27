@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Create Video Campaign</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
       rel="stylesheet"
@@ -10,163 +11,203 @@
     <style>
       body {
         font-family: "Inter", sans-serif;
-        background-color: #f7f9fc;
-        padding: 40px;
-        display: flex;
-        justify-content: center;
-      }
-      .container {
-        background: #ffffff;
-        padding: 30px 40px;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-        max-width: 1000px;
-        width: 100%;
-      }
-      h2 {
-        text-align: center;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 25px;
-      }
-      .form-grid {
-        display: flex;
-        gap: 30px;
-      }
-      .form-left,
-      .form-right {
-        flex: 1;
-      }
-      .form-right {
-        display: flex;
-        flex-direction: column;
-        justify-content: stretch;
-      }
-      .form-right > div {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-      }
-      label {
-        display: block;
-        margin-top: 15px;
-        margin-bottom: 5px;
-        font-weight: 600;
-        color: #34495e;
-      }
-      input,
-      textarea,
-      select {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #dfe6e9;
-        border-radius: 8px;
-        font-size: 16px;
-        background-color: #fdfdfd;
-        box-sizing: border-box;
-        transition: border 0.3s ease;
-      }
-      input:focus,
-      textarea:focus,
-      select:focus {
-        border-color: #3498db;
-        outline: none;
-      }
-      textarea {
-        height: 100%;
-        resize: none;
-      }
-      button {
-        margin-top: 25px;
-        padding: 12px 20px;
-        font-size: 16px;
-        font-weight: 600;
-        background-color: #3498db;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        width: 100%;
-        transition: background 0.3s ease;
-      }
-      button:hover {
-        background-color: #2980b9;
-      }
-      .textarea-group {
-        display: flex;
-        gap: 20px;
-        height: 100%;
-      }
-      .textarea-box {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
       }
     </style>
   </head>
-  <body>
-    <div class="container">
-      <h2>Create Sponsored Brands Video Campaign</h2>
+  <body class="bg-gray-100 py-10">
+    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-10">
+      <h2 class="text-3xl font-semibold text-center text-gray-800 mb-8">
+        Create Sponsored Brands Video Campaign
+      </h2>
       <form id="campaignForm">
-        <div class="form-grid">
-          <div class="form-left">
-            <label for="country">Country</label>
-            <select id="country" required>
-              <option value="US">United States</option>
-              <option value="CA">Canada</option>
-            </select>
-
-            <label for="productName">Product Name</label>
-            <input type="text" id="productName" required />
-
-            <label for="sku">SKU</label>
-            <input type="text" id="sku" required />
-
-            <label for="asin">ASIN</label>
-            <input type="text" id="asin" required />
-
-            <label for="portfolioId">Portfolio ID (optional)</label>
-            <input type="text" id="portfolioId" />
-
-            <label for="videoId">Video Media ID</label>
-            <input type="text" id="videoId" required />
-          </div>
-
-          <div class="form-right">
-            <div class="textarea-group">
-              <div class="textarea-box">
-                <label for="keywords">Keywords (one per line)</label>
-                <textarea id="keywords" required></textarea>
-              </div>
-              <div class="textarea-box">
-                <label for="negativeKeywords"
-                  >Negative Keywords (one per line)</label
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="space-y-4">
+            <div>
+              <label for="country" class="block font-semibold text-gray-700"
+                >Country</label
+              >
+              <select
+                id="country"
+                required
+                class="w-full mt-1 p-3 border rounded-lg"
+              >
+                <option value="US">United States</option>
+                <option value="CA">Canada</option>
+              </select>
+            </div>
+            <div>
+              <label
+                for="productNumber"
+                class="block font-semibold text-gray-700"
+                >Product Number</label
+              >
+              <input
+                type="text"
+                id="productNumber"
+                required
+                class="w-full mt-1 p-3 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label for="sku" class="block font-semibold text-gray-700"
+                >SKU</label
+              >
+              <input
+                type="text"
+                id="sku"
+                required
+                class="w-full mt-1 p-3 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label for="asin" class="block font-semibold text-gray-700"
+                >ASIN</label
+              >
+              <input
+                type="text"
+                id="asin"
+                required
+                class="w-full mt-1 p-3 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label for="portfolioId" class="block font-semibold text-gray-700"
+                >Portfolio ID
+                <span class="text-gray-500">(optional)</span></label
+              >
+              <div class="flex gap-2 items-center">
+                <input
+                  type="text"
+                  id="portfolioId"
+                  class="w-full mt-1 p-3 border rounded-lg"
+                />
+                <button
+                  type="button"
+                  onclick="window.open('https://docs.google.com/spreadsheets/d/1uvQitfIkrXISu3oIXBeZ-3giGHw2hqWfNY6ih9STntI/edit?usp=sharing', '_blank')"
+                  class="text-blue-600 underline text-sm"
                 >
-                <textarea id="negativeKeywords"></textarea>
+                  Check here
+                </button>
               </div>
+            </div>
+            <div>
+              <label for="videoId" class="block font-semibold text-gray-700"
+                >Video Media ID</label
+              >
+              <div class="flex gap-2 items-center">
+                <input
+                  type="text"
+                  id="videoId"
+                  required
+                  class="w-full mt-1 p-3 border rounded-lg"
+                />
+                <button
+                  type="button"
+                  onclick="alert('To get Video Media ID, follow the instruction in your ad console upload page under Assets > Video.')"
+                  class="text-blue-600 underline text-sm"
+                >
+                  How to get
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                for="campaignType"
+                class="block font-semibold text-gray-700"
+                >Campaign Type</label
+              >
+              <select
+                id="campaignType"
+                required
+                class="w-full mt-1 p-3 border rounded-lg"
+              >
+                <option value="broad">Video Ads Broad</option>
+                <option value="phrase">Video Ads Phrase</option>
+                <option value="exact">Video Ads Exact</option>
+              </select>
+            </div>
+          </div>
+          <div class="space-y-4 flex flex-col">
+            <div class="flex flex-col lg:flex-row gap-4 h-full">
+              <div class="flex-1 flex flex-col">
+                <label
+                  for="keywords"
+                  class="block font-semibold text-gray-700 mb-1"
+                  >Targeting Keywords<br />(one per line)</label
+                >
+                <textarea
+                  id="keywords"
+                  required
+                  class="w-full h-full p-3 border rounded-lg resize-none"
+                ></textarea>
+              </div>
+              <div class="flex-1 flex flex-col">
+                <label
+                  for="negativeKeywords"
+                  class="block font-semibold text-gray-700 mb-1"
+                  >Negative Keywords<br />(one per line)</label
+                >
+                <textarea
+                  id="negativeKeywords"
+                  class="w-full h-full p-3 border rounded-lg resize-none"
+                ></textarea>
+              </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+              <button
+                type="button"
+                id="clearFields"
+                class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-lg min-w-[150px]"
+              >
+                Clear Fields
+              </button>
+              <button
+                type="button"
+                id="clearTemplate"
+                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg min-w-[150px]"
+              >
+                Clear Template
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <button
+                type="button"
+                id="addTemplate"
+                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg min-w-[150px]"
+              >
+                Add to Template
+              </button>
+              <button
+                type="button"
+                id="downloadExcel"
+                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg min-w-[150px]"
+              >
+                Download Excel
+              </button>
             </div>
           </div>
         </div>
-        <button type="submit">Download Excel</button>
       </form>
+      <div
+        id="campaignList"
+        class="mt-6 bg-gray-200 p-4 rounded-lg max-h-56 overflow-y-auto text-sm text-gray-800"
+      ></div>
     </div>
 
     <script>
+      let campaignData = [];
+      const campaignList = document.getElementById("campaignList");
+
       document
-        .getElementById("campaignForm")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
-
-          const XLSX = await import(
-            "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.mjs"
-          );
-
+        .getElementById("addTemplate")
+        .addEventListener("click", async () => {
           const country = document.getElementById("country").value;
-          const productName = document.getElementById("productName").value;
+          const productNumber = document.getElementById("productNumber").value;
           const sku = document.getElementById("sku").value;
           const asin = document.getElementById("asin").value;
           const portfolioId = document.getElementById("portfolioId").value;
           const videoId = document.getElementById("videoId").value;
+          const campaignType = document.getElementById("campaignType").value;
           const keywords = document
             .getElementById("keywords")
             .value.trim()
@@ -179,44 +220,47 @@
             .filter(Boolean);
 
           const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-          const campaignId = `${productName} ${sku} Video Ads Broad`;
+          const campaignId = `${productNumber} ${sku} Video Ads ${
+            campaignType.charAt(0).toUpperCase() + campaignType.slice(1)
+          }`;
           const brandEntityId =
             country === "US" ? "ENTITYCQP7AL92VN6L" : "ENTITY2DMN2Z7IO7RFX";
 
-          const data = [
-            {
-              Product: "Sponsored Brands",
-              Entity: "Campaign",
-              Operation: "Create",
-              "Campaign Id": campaignId,
-              "Draft Campaign Id": campaignId,
-              "Portfolio Id": portfolioId,
-              "Campaign Name": campaignId,
-              "Start Date": today,
-              "End Date": "",
-              State: "Enabled",
-              "Budget Type": "Daily",
-              Budget: 10,
-              "Bid Optimization": "Auto",
-              "Bid Multiplier": "",
-              Bid: "",
-              "Keyword Text": "",
-              "Match Type": "",
-              "Product Targeting Expression": "",
-              "Ad Format": "video",
-              "Landing Page URL": "",
-              "Landing Page asins": "",
-              "Brand Entity Id": brandEntityId,
-              "Brand Name": "BlueStars",
-              "Brand Logo Asset Id": "",
-              "Brand Logo URL":
-                "https://m.media-amazon.com/images/S/land-na-9d5791dcf3af/or/B0CDFNLXWY",
-              "Creative Headline": "",
-              "Creative asins": asin,
-              "Video Media Ids": videoId,
-              "Creative Type": "video",
-            },
-            ...keywords.map((kw) => ({
+          campaignData.push({
+            Product: "Sponsored Brands",
+            Entity: "Campaign",
+            Operation: "Create",
+            "Campaign Id": campaignId,
+            "Draft Campaign Id": campaignId,
+            "Portfolio Id": portfolioId,
+            "Campaign Name": campaignId,
+            "Start Date": today,
+            "End Date": "",
+            State: "Enabled",
+            "Budget Type": "Daily",
+            Budget: 10,
+            "Bid Optimization": "Auto",
+            "Bid Multiplier": "",
+            Bid: "",
+            "Keyword Text": "",
+            "Match Type": "",
+            "Product Targeting Expression": "",
+            "Ad Format": "video",
+            "Landing Page URL": "",
+            "Landing Page asins": "",
+            "Brand Entity Id": brandEntityId,
+            "Brand Name": "BlueStars",
+            "Brand Logo Asset Id": "",
+            "Brand Logo URL":
+              "https://m.media-amazon.com/images/S/land-na-9d5791dcf3af/or/B0CDFNLXWY",
+            "Creative Headline": "",
+            "Creative asins": asin,
+            "Video Media Ids": videoId,
+            "Creative Type": "video",
+          });
+
+          keywords.forEach((kw) => {
+            campaignData.push({
               Product: "Sponsored Brands",
               Entity: "Keyword",
               Operation: "Create",
@@ -233,7 +277,7 @@
               "Bid Multiplier": "",
               Bid: 0.25,
               "Keyword Text": kw,
-              "Match Type": "phrase",
+              "Match Type": campaignType,
               "Product Targeting Expression": "",
               "Ad Format": "",
               "Landing Page URL": "",
@@ -246,8 +290,11 @@
               "Creative asins": "",
               "Video Media Ids": "",
               "Creative Type": "",
-            })),
-            ...negativeKeywords.map((kw) => ({
+            });
+          });
+
+          negativeKeywords.forEach((kw) => {
+            campaignData.push({
               Product: "Sponsored Brands",
               Entity: "Negative Keyword",
               Operation: "Create",
@@ -277,14 +324,34 @@
               "Creative asins": "",
               "Video Media Ids": "",
               "Creative Type": "",
-            })),
-          ];
+            });
+          });
 
-          const worksheet = XLSX.utils.json_to_sheet(data);
+          const line = document.createElement("div");
+          line.textContent = `✔ Added: ${campaignId}`;
+          campaignList.appendChild(line);
+        });
+
+      document
+        .getElementById("downloadExcel")
+        .addEventListener("click", async () => {
+          const XLSX = await import(
+            "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.mjs"
+          );
+          const worksheet = XLSX.utils.json_to_sheet(campaignData);
           const workbook = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(workbook, worksheet, "Campaign");
           XLSX.writeFile(workbook, "Video_Campaign_Upload_Template.xlsx");
         });
+
+      document.getElementById("clearFields").addEventListener("click", () => {
+        document.getElementById("campaignForm").reset();
+      });
+
+      document.getElementById("clearTemplate").addEventListener("click", () => {
+        campaignData = [];
+        campaignList.innerHTML = "";
+      });
     </script>
   </body>
 </html>
