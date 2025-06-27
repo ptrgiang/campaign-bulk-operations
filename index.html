@@ -84,7 +84,7 @@
                 <button
                   type="button"
                   onclick="window.open('https://docs.google.com/spreadsheets/d/1uvQitfIkrXISu3oIXBeZ-3giGHw2hqWfNY6ih9STntI/edit?usp=sharing', '_blank')"
-                  class="text-blue-600 underline text-sm"
+                  class="text-blue-600 underline text-sm mt-1"
                 >
                   Check here
                 </button>
@@ -104,7 +104,7 @@
                 <button
                   type="button"
                   onclick="alert('To get Video Media ID, follow the instruction in your ad console upload page under Assets > Video.')"
-                  class="text-blue-600 underline text-sm"
+                  class="text-blue-600 underline text-sm mt-1"
                 >
                   How to get
                 </button>
@@ -197,6 +197,38 @@
     <script>
       let campaignData = [];
       const campaignList = document.getElementById("campaignList");
+
+      const defaultColumns = [
+        "Product",
+        "Entity",
+        "Operation",
+        "Campaign Id",
+        "Draft Campaign Id",
+        "Portfolio Id",
+        "Campaign Name",
+        "Start Date",
+        "End Date",
+        "State",
+        "Budget Type",
+        "Budget",
+        "Bid Optimization",
+        "Bid Multiplier",
+        "Bid",
+        "Keyword Text",
+        "Match Type",
+        "Product Targeting Expression",
+        "Ad Format",
+        "Landing Page URL",
+        "Landing Page asins",
+        "Brand Entity Id",
+        "Brand Name",
+        "Brand Logo Asset Id",
+        "Brand Logo URL",
+        "Creative Headline",
+        "Creative asins",
+        "Video Media Ids",
+        "Creative Type",
+      ];
 
       document
         .getElementById("addTemplate")
@@ -338,7 +370,11 @@
           const XLSX = await import(
             "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.mjs"
           );
-          const worksheet = XLSX.utils.json_to_sheet(campaignData);
+          const output =
+            campaignData.length > 0
+              ? campaignData
+              : [Object.fromEntries(defaultColumns.map((key) => [key, ""]))];
+          const worksheet = XLSX.utils.json_to_sheet(output);
           const workbook = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(workbook, worksheet, "Campaign");
           XLSX.writeFile(workbook, "Video_Campaign_Upload_Template.xlsx");
