@@ -153,12 +153,22 @@ const hideError = () => {
 };
 
 const showSuccess = (message = "Campaign added successfully!") => {
-  elements.successAlert.querySelector("span").textContent = message;
+  const successSpan = elements.successAlert.querySelector("span");
+
+  // Determine if it's an "added" or "replaced" action and style accordingly
+  if (message.toLowerCase().includes("replaced")) {
+    successSpan.innerHTML = `Campaign <strong style="color: #f59e0b; font-weight: 700;">REPLACED</strong> successfully!`;
+  } else {
+    successSpan.innerHTML = `Campaign <strong style="color: #16a34a; font-weight: 700;">ADDED</strong> successfully!`;
+  }
+
   elements.successAlert.classList.remove("hidden");
   elements.errorAlert.classList.add("hidden");
+
+  // Auto-hide after 4 seconds (longer to ensure user sees the action)
   setTimeout(() => {
     elements.successAlert.classList.add("hidden");
-  }, 3000);
+  }, 4000);
 };
 
 // Campaign Management Functions
@@ -375,7 +385,7 @@ const addCampaign = () => {
   const result = addCampaignToCampaignData(validation.data);
   updateCampaignList();
 
-  // Show appropriate success message
+  // Show appropriate success message with clear keywords
   const message = result.isReplacement
     ? "Campaign replaced successfully!"
     : "Campaign added successfully!";
