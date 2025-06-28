@@ -8,11 +8,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <style>
-      body {
-        font-family: "Inter", sans-serif;
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="bg-gray-100 py-10">
     <div
@@ -136,7 +132,7 @@
                 />
                 <button
                   type="button"
-                  onclick="document.getElementById('videoModal').classList.remove('hidden')"
+                  id="videoHelpBtn"
                   class="text-sm text-blue-600 hover:underline"
                 >
                   How to get
@@ -238,12 +234,12 @@
         <h3 class="text-lg font-semibold mb-4">How to get Video Media ID</h3>
         <p class="text-gray-700 mb-6">
           Go to your ad console, navigate to <strong>Assets > Video</strong> and
-          upload your video first. You’ll find the Video Media ID associated
+          upload your video first. You'll find the Video Media ID associated
           with each uploaded video.
         </p>
         <div class="text-right">
           <button
-            onclick="document.getElementById('videoModal').classList.add('hidden')"
+            id="closeModal"
             class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
           >
             Close
@@ -252,194 +248,6 @@
       </div>
     </div>
 
-    <script>
-      let campaignData = [];
-      const campaignList = document.getElementById("campaignList");
-
-      const defaultColumns = [
-        "Product",
-        "Entity",
-        "Operation",
-        "Campaign Id",
-        "Draft Campaign Id",
-        "Portfolio Id",
-        "Campaign Name",
-        "Start Date",
-        "End Date",
-        "State",
-        "Budget Type",
-        "Budget",
-        "Bid Optimization",
-        "Bid Multiplier",
-        "Bid",
-        "Keyword Text",
-        "Match Type",
-        "Product Targeting Expression",
-        "Ad Format",
-        "Landing Page URL",
-        "Landing Page asins",
-        "Brand Entity Id",
-        "Brand Name",
-        "Brand Logo Asset Id",
-        "Brand Logo URL",
-        "Creative Headline",
-        "Creative asins",
-        "Video Media Ids",
-        "Creative Type",
-      ];
-
-      const ensureDefaultColumns = (obj) => {
-        return Object.fromEntries(
-          defaultColumns.map((key) => [key, obj[key] ?? ""])
-        );
-      };
-
-      document
-        .getElementById("addTemplate")
-        .addEventListener("click", async () => {
-          const errorBox = document.getElementById("formError");
-          errorBox.classList.add("hidden");
-          errorBox.textContent = "";
-
-          const country = document.getElementById("country").value;
-          const productNumber = document
-            .getElementById("productNumber")
-            .value.trim();
-          const sku = document.getElementById("sku").value.trim();
-          const asin = document.getElementById("asin").value.trim();
-          const portfolioId = document
-            .getElementById("portfolioId")
-            .value.trim();
-          const videoId = document.getElementById("videoId").value.trim();
-          const campaignType = document.getElementById("campaignType").value;
-          const keywords = document
-            .getElementById("keywords")
-            .value.trim()
-            .split("\n")
-            .filter(Boolean);
-          const negativeKeywords = document
-            .getElementById("negativeKeywords")
-            .value.trim()
-            .split("\n")
-            .filter(Boolean);
-
-          if (
-            !productNumber ||
-            !sku ||
-            !asin ||
-            !videoId ||
-            keywords.length === 0
-          ) {
-            errorBox.textContent =
-              "❌ Please fill in all required fields marked with *";
-            errorBox.classList.remove("hidden");
-            return;
-          }
-
-          const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-          const campaignId = `${productNumber} ${sku} Video Ads ${
-            campaignType.charAt(0).toUpperCase() + campaignType.slice(1)
-          }`;
-          const brandEntityId =
-            country === "US" ? "ENTITYCQP7AL92VN6L" : "ENTITY2DMN2Z7IO7RFX";
-
-          campaignData.push(
-            ensureDefaultColumns({
-              Product: "Sponsored Brands",
-              Entity: "Campaign",
-              Operation: "Create",
-              "Campaign Id": campaignId,
-              "Portfolio Id": portfolioId,
-              "Campaign Name": campaignId,
-              "Start Date": today,
-              State: "Enabled",
-              "Budget Type": "Daily",
-              Budget: 10,
-              "Bid Optimization": "Auto",
-              "Ad Format": "video",
-              "Brand Entity Id": brandEntityId,
-              "Brand Name": "BlueStars",
-              "Creative asins": asin,
-              "Video Media Ids": videoId,
-              "Creative Type": "video",
-            })
-          );
-
-          keywords.forEach((kw) => {
-            campaignData.push(
-              ensureDefaultColumns({
-                Product: "Sponsored Brands",
-                Entity: "Keyword",
-                Operation: "Create",
-                "Campaign Id": campaignId,
-                State: "Enabled",
-                Bid: 0.25,
-                "Keyword Text": kw,
-                "Match Type": campaignType,
-              })
-            );
-          });
-
-          negativeKeywords.forEach((kw) => {
-            campaignData.push(
-              ensureDefaultColumns({
-                Product: "Sponsored Brands",
-                Entity: "Negative Keyword",
-                Operation: "Create",
-                "Campaign Id": campaignId,
-                State: "Enabled",
-                "Keyword Text": kw,
-                "Match Type": "negativePhrase",
-              })
-            );
-          });
-
-          const line = document.createElement("div");
-          line.className =
-            "flex justify-between items-center bg-white p-2 rounded shadow mb-2";
-          line.dataset.campaignId = campaignId;
-          line.innerHTML = `
-          <span>✔ Added: ${campaignId}</span>
-          <button type="button" class="text-red-500 hover:text-red-700 font-bold text-lg ml-4" onclick="removeCampaign(this, '${campaignId}')">×</button>
-        `;
-          campaignList.appendChild(line);
-        });
-
-      function removeCampaign(button, campaignId) {
-        const line = button.closest("div");
-        if (line) line.remove();
-        campaignData = campaignData.filter(
-          (entry) => entry["Campaign Id"] !== campaignId
-        );
-      }
-
-      document
-        .getElementById("downloadExcel")
-        .addEventListener("click", async () => {
-          const XLSX = await import(
-            "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.mjs"
-          );
-          const output =
-            campaignData.length > 0
-              ? campaignData
-              : [Object.fromEntries(defaultColumns.map((key) => [key, ""]))];
-          const worksheet = XLSX.utils.json_to_sheet(output, {
-            header: defaultColumns,
-          });
-          const workbook = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(workbook, worksheet, "Campaign");
-          XLSX.writeFile(workbook, "Video_Campaign_Upload_Template.xlsx");
-        });
-
-      document.getElementById("clearFields").addEventListener("click", () => {
-        document.getElementById("campaignForm").reset();
-      });
-
-      document.getElementById("clearTemplate").addEventListener("click", () => {
-        campaignData = [];
-        campaignList.innerHTML = "";
-        document.getElementById("formError").classList.add("hidden");
-      });
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>

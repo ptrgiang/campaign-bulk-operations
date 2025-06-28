@@ -1,0 +1,55 @@
+/* Custom styles for the Video Campaign Creator */
+body {
+  font-family: "Inter", sans-serif;
+}
+
+/* Additional custom styles can be added here */
+.campaign-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.campaign-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar for campaign list */
+.campaign-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.campaign-list-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.campaign-list-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.campaign-list-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Modal animation */
+.modal-overlay {
+  backdrop-filter: blur(2px);
+}
+
+/* Button focus states */
+button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Form validation styles */
+.error-field {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.success-field {
+  border-color: #10b981;
+  background-color: #f0fdf4;
+}
