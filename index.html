@@ -107,7 +107,7 @@
                 />
                 <button
                   type="button"
-                  onclick="alert('To get Video Media ID, follow the instruction in your ad console upload page under Assets > Video.')"
+                  onclick="document.getElementById('videoModal').classList.remove('hidden')"
                   class="text-blue-600 underline text-sm"
                 >
                   How to get
@@ -196,6 +196,29 @@
         id="campaignList"
         class="mt-6 bg-gray-200 p-4 rounded-lg max-h-56 overflow-y-auto text-sm text-gray-800"
       ></div>
+    </div>
+
+    <!-- Video ID Modal -->
+    <div
+      id="videoModal"
+      class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+        <h3 class="text-lg font-semibold mb-4">How to get Video Media ID</h3>
+        <p class="text-gray-700 mb-6">
+          Go to your ad console, and navigate to
+          <strong>Assets &gt; Video</strong> and upload your video first. You’ll
+          find the Video Media ID associated with each uploaded video.
+        </p>
+        <div class="text-right">
+          <button
+            onclick="document.getElementById('videoModal').classList.add('hidden')"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
 
     <script>
