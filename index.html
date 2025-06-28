@@ -75,7 +75,9 @@
                 >Portfolio ID
                 <span class="text-gray-500">(optional)</span></label
               >
-              <div class="flex gap-2 items-center">
+              <div
+                class="flex flex-col items-center sm:flex-row sm:items-end gap-2"
+              >
                 <input
                   type="text"
                   id="portfolioId"
@@ -84,7 +86,7 @@
                 <button
                   type="button"
                   onclick="window.open('https://docs.google.com/spreadsheets/d/1uvQitfIkrXISu3oIXBeZ-3giGHw2hqWfNY6ih9STntI/edit?usp=sharing', '_blank')"
-                  class="text-blue-600 underline text-sm mt-1"
+                  class="text-blue-600 underline text-sm"
                 >
                   Check here
                 </button>
@@ -94,7 +96,9 @@
               <label for="videoId" class="block font-semibold text-gray-700"
                 >Video Media ID</label
               >
-              <div class="flex gap-2 items-center">
+              <div
+                class="flex flex-col items-center sm:flex-row sm:items-end gap-2"
+              >
                 <input
                   type="text"
                   id="videoId"
@@ -104,7 +108,7 @@
                 <button
                   type="button"
                   onclick="alert('To get Video Media ID, follow the instruction in your ad console upload page under Assets > Video.')"
-                  class="text-blue-600 underline text-sm mt-1"
+                  class="text-blue-600 underline text-sm"
                 >
                   How to get
                 </button>
@@ -153,7 +157,7 @@
                 ></textarea>
               </div>
             </div>
-            <div class="flex gap-3 pt-2">
+            <div class="flex gap-3">
               <button
                 type="button"
                 id="clearFields"
@@ -230,6 +234,12 @@
         "Creative Type",
       ];
 
+      const ensureDefaultColumns = (obj) => {
+        return Object.fromEntries(
+          defaultColumns.map((key) => [key, obj[key] ?? ""])
+        );
+      };
+
       document
         .getElementById("addTemplate")
         .addEventListener("click", async () => {
@@ -258,105 +268,52 @@
           const brandEntityId =
             country === "US" ? "ENTITYCQP7AL92VN6L" : "ENTITY2DMN2Z7IO7RFX";
 
-          campaignData.push({
+          const campaignEntry = ensureDefaultColumns({
             Product: "Sponsored Brands",
             Entity: "Campaign",
             Operation: "Create",
             "Campaign Id": campaignId,
-            "Draft Campaign Id": campaignId,
             "Portfolio Id": portfolioId,
             "Campaign Name": campaignId,
             "Start Date": today,
-            "End Date": "",
             State: "Enabled",
             "Budget Type": "Daily",
             Budget: 10,
             "Bid Optimization": "Auto",
-            "Bid Multiplier": "",
-            Bid: "",
-            "Keyword Text": "",
-            "Match Type": "",
-            "Product Targeting Expression": "",
             "Ad Format": "video",
-            "Landing Page URL": "",
-            "Landing Page asins": "",
             "Brand Entity Id": brandEntityId,
             "Brand Name": "BlueStars",
-            "Brand Logo Asset Id": "",
-            "Brand Logo URL":
-              "https://m.media-amazon.com/images/S/land-na-9d5791dcf3af/or/B0CDFNLXWY",
-            "Creative Headline": "",
             "Creative asins": asin,
             "Video Media Ids": videoId,
             "Creative Type": "video",
           });
+          campaignData.push(campaignEntry);
 
           keywords.forEach((kw) => {
-            campaignData.push({
+            const entry = ensureDefaultColumns({
               Product: "Sponsored Brands",
               Entity: "Keyword",
               Operation: "Create",
               "Campaign Id": campaignId,
-              "Draft Campaign Id": campaignId,
-              "Portfolio Id": "",
-              "Campaign Name": campaignId,
-              "Start Date": "",
-              "End Date": "",
               State: "Enabled",
-              "Budget Type": "",
-              Budget: "",
-              "Bid Optimization": "",
-              "Bid Multiplier": "",
               Bid: 0.25,
               "Keyword Text": kw,
               "Match Type": campaignType,
-              "Product Targeting Expression": "",
-              "Ad Format": "",
-              "Landing Page URL": "",
-              "Landing Page asins": "",
-              "Brand Entity Id": "",
-              "Brand Name": "",
-              "Brand Logo Asset Id": "",
-              "Brand Logo URL": "",
-              "Creative Headline": "",
-              "Creative asins": "",
-              "Video Media Ids": "",
-              "Creative Type": "",
             });
+            campaignData.push(entry);
           });
 
           negativeKeywords.forEach((kw) => {
-            campaignData.push({
+            const entry = ensureDefaultColumns({
               Product: "Sponsored Brands",
               Entity: "Negative Keyword",
               Operation: "Create",
               "Campaign Id": campaignId,
-              "Draft Campaign Id": campaignId,
-              "Portfolio Id": "",
-              "Campaign Name": campaignId,
-              "Start Date": "",
-              "End Date": "",
               State: "Enabled",
-              "Budget Type": "",
-              Budget: "",
-              "Bid Optimization": "",
-              "Bid Multiplier": "",
-              Bid: "",
               "Keyword Text": kw,
               "Match Type": "negativePhrase",
-              "Product Targeting Expression": "",
-              "Ad Format": "",
-              "Landing Page URL": "",
-              "Landing Page asins": "",
-              "Brand Entity Id": "",
-              "Brand Name": "",
-              "Brand Logo Asset Id": "",
-              "Brand Logo URL": "",
-              "Creative Headline": "",
-              "Creative asins": "",
-              "Video Media Ids": "",
-              "Creative Type": "",
             });
+            campaignData.push(entry);
           });
 
           const line = document.createElement("div");
@@ -374,7 +331,9 @@
             campaignData.length > 0
               ? campaignData
               : [Object.fromEntries(defaultColumns.map((key) => [key, ""]))];
-          const worksheet = XLSX.utils.json_to_sheet(output);
+          const worksheet = XLSX.utils.json_to_sheet(output, {
+            header: defaultColumns,
+          });
           const workbook = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(workbook, worksheet, "Campaign");
           XLSX.writeFile(workbook, "Video_Campaign_Upload_Template.xlsx");
