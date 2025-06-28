@@ -2,7 +2,6 @@
 
 // Global variables
 let campaignData = [];
-const campaignList = document.getElementById("campaignList");
 
 // Default Excel columns
 const defaultColumns = [
@@ -37,42 +36,45 @@ const defaultColumns = [
   "Creative Type",
 ];
 
+// DOM Elements
+const elements = {
+  form: document.getElementById("campaignForm"),
+  country: document.getElementById("country"),
+  campaignType: document.getElementById("campaignType"),
+  portfolioId: document.getElementById("portfolioId"),
+  productNumber: document.getElementById("productNumber"),
+  sku: document.getElementById("sku"),
+  asin: document.getElementById("asin"),
+  videoId: document.getElementById("videoId"),
+  keywords: document.getElementById("keywords"),
+  negativeKeywords: document.getElementById("negativeKeywords"),
+
+  // Buttons
+  addCampaign: document.getElementById("addCampaign"),
+  clearForm: document.getElementById("clearForm"),
+  clearTemplate: document.getElementById("clearTemplate"),
+  downloadExcel: document.getElementById("downloadExcel"),
+  videoHelpBtn: document.getElementById("videoHelpBtn"),
+
+  // Alerts
+  errorAlert: document.getElementById("errorAlert"),
+  successAlert: document.getElementById("successAlert"),
+  errorMessage: document.getElementById("errorMessage"),
+  closeError: document.getElementById("closeError"),
+
+  // Campaign List
+  campaignList: document.getElementById("campaignList"),
+  campaignListTitle: document.getElementById("campaignListTitle"),
+
+  // Modal
+  videoModal: document.getElementById("videoModal"),
+  closeModal: document.getElementById("closeModal"),
+  closeModalBtn: document.getElementById("closeModalBtn"),
+};
+
 // Utility Functions
 const ensureDefaultColumns = (obj) => {
   return Object.fromEntries(defaultColumns.map((key) => [key, obj[key] ?? ""]));
-};
-
-const validateRequiredFields = () => {
-  const productNumber = document.getElementById("productNumber").value.trim();
-  const sku = document.getElementById("sku").value.trim();
-  const asin = document.getElementById("asin").value.trim();
-  const videoId = document.getElementById("videoId").value.trim();
-  const keywords = document
-    .getElementById("keywords")
-    .value.trim()
-    .split("\n")
-    .filter(Boolean);
-
-  return {
-    isValid: productNumber && sku && asin && videoId && keywords.length > 0,
-    productNumber,
-    sku,
-    asin,
-    videoId,
-    keywords,
-  };
-};
-
-const showError = (message) => {
-  const errorBox = document.getElementById("formError");
-  errorBox.textContent = message;
-  errorBox.classList.remove("hidden");
-};
-
-const hideError = () => {
-  const errorBox = document.getElementById("formError");
-  errorBox.classList.add("hidden");
-  errorBox.textContent = "";
 };
 
 const getCurrentDate = () => {
@@ -83,13 +85,82 @@ const getBrandEntityId = (country) => {
   return country === "US" ? "ENTITYCQP7AL92VN6L" : "ENTITY2DMN2Z7IO7RFX";
 };
 
-// Campaign Management Functions
 const createCampaignId = (productNumber, sku, campaignType) => {
   return `${productNumber} ${sku} Video Ads ${
     campaignType.charAt(0).toUpperCase() + campaignType.slice(1)
   }`;
 };
 
+// Validation Functions
+const validateRequiredFields = () => {
+  const productNumber = elements.productNumber.value.trim();
+  const sku = elements.sku.value.trim();
+  const asin = elements.asin.value.trim();
+  const videoId = elements.videoId.value.trim();
+  const keywords = elements.keywords.value.trim().split("\n").filter(Boolean);
+
+  if (!productNumber) {
+    return { isValid: false, message: "Product Number is required" };
+  }
+
+  if (!sku) {
+    return { isValid: false, message: "SKU is required" };
+  }
+
+  if (!asin) {
+    return { isValid: false, message: "ASIN is required" };
+  }
+
+  if (!videoId) {
+    return { isValid: false, message: "Video Media ID is required" };
+  }
+
+  if (keywords.length === 0) {
+    return {
+      isValid: false,
+      message: "At least one targeting keyword is required",
+    };
+  }
+
+  return {
+    isValid: true,
+    data: {
+      productNumber,
+      sku,
+      asin,
+      videoId,
+      keywords,
+      negativeKeywords: elements.negativeKeywords.value
+        .trim()
+        .split("\n")
+        .filter(Boolean),
+      portfolioId: elements.portfolioId.value.trim(),
+      country: elements.country.value,
+      campaignType: elements.campaignType.value,
+    },
+  };
+};
+
+// Alert Functions
+const showError = (message) => {
+  elements.errorMessage.textContent = message;
+  elements.errorAlert.classList.remove("hidden");
+  elements.successAlert.classList.add("hidden");
+};
+
+const hideError = () => {
+  elements.errorAlert.classList.add("hidden");
+};
+
+const showSuccess = () => {
+  elements.successAlert.classList.remove("hidden");
+  elements.errorAlert.classList.add("hidden");
+  setTimeout(() => {
+    elements.successAlert.classList.add("hidden");
+  }, 3000);
+};
+
+// Campaign Management Functions
 const addCampaignToCampaignData = (formData) => {
   const {
     productNumber,
@@ -102,6 +173,7 @@ const addCampaignToCampaignData = (formData) => {
     country,
     campaignType,
   } = formData;
+
   const today = getCurrentDate();
   const campaignId = createCampaignId(productNumber, sku, campaignType);
   const brandEntityId = getBrandEntityId(country);
@@ -130,7 +202,7 @@ const addCampaignToCampaignData = (formData) => {
   );
 
   // Add keywords
-  keywords.forEach((kw) => {
+  keywords.forEach((keyword) => {
     campaignData.push(
       ensureDefaultColumns({
         Product: "Sponsored Brands",
@@ -139,14 +211,14 @@ const addCampaignToCampaignData = (formData) => {
         "Campaign Id": campaignId,
         State: "Enabled",
         Bid: 0.25,
-        "Keyword Text": kw,
+        "Keyword Text": keyword,
         "Match Type": campaignType,
       })
     );
   });
 
   // Add negative keywords
-  negativeKeywords.forEach((kw) => {
+  negativeKeywords.forEach((keyword) => {
     campaignData.push(
       ensureDefaultColumns({
         Product: "Sponsored Brands",
@@ -154,7 +226,7 @@ const addCampaignToCampaignData = (formData) => {
         Operation: "Create",
         "Campaign Id": campaignId,
         State: "Enabled",
-        "Keyword Text": kw,
+        "Keyword Text": keyword,
         "Match Type": "negativePhrase",
       })
     );
@@ -163,24 +235,60 @@ const addCampaignToCampaignData = (formData) => {
   return campaignId;
 };
 
-const addCampaignToUI = (campaignId) => {
-  const line = document.createElement("div");
-  line.className =
-    "flex justify-between items-center bg-white p-2 rounded shadow mb-2 campaign-item";
-  line.dataset.campaignId = campaignId;
-  line.innerHTML = `
-    <span>✔ Added: ${campaignId}</span>
-    <button type="button" class="text-red-500 hover:text-red-700 font-bold text-lg ml-4" onclick="removeCampaign(this, '${campaignId}')">×</button>
-  `;
-  campaignList.appendChild(line);
+const updateCampaignList = () => {
+  const campaignIds = [
+    ...new Set(campaignData.map((c) => c["Campaign Id"]).filter(Boolean)),
+  ];
+
+  // Update title
+  elements.campaignListTitle.textContent = `Campaign Template (${campaignIds.length})`;
+
+  if (campaignIds.length === 0) {
+    elements.campaignList.innerHTML = `
+            <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <p>No campaigns added yet</p>
+                <span>Add your first campaign to see it here</span>
+            </div>
+        `;
+    return;
+  }
+
+  elements.campaignList.innerHTML = campaignIds
+    .map(
+      (campaignId) => `
+        <div class="campaign-item" data-campaign-id="${campaignId}">
+            <div class="campaign-info">
+                <svg class="campaign-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22,4 12,14.01 9,11.01"></polyline>
+                </svg>
+                <span class="campaign-name">${campaignId}</span>
+            </div>
+            <button type="button" class="campaign-remove" onclick="removeCampaign('${campaignId}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    `
+    )
+    .join("");
 };
 
-const removeCampaign = (button, campaignId) => {
-  const line = button.closest("div");
-  if (line) line.remove();
+const removeCampaign = (campaignId) => {
   campaignData = campaignData.filter(
     (entry) => entry["Campaign Id"] !== campaignId
   );
+  updateCampaignList();
 };
 
 // Make removeCampaign globally accessible
@@ -189,104 +297,85 @@ window.removeCampaign = removeCampaign;
 // Excel Functions
 const downloadExcel = async () => {
   try {
+    // Import SheetJS library
     const XLSX = await import(
       "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.mjs"
     );
+
     const output =
       campaignData.length > 0
-        ? campaignData
-        : [Object.fromEntries(defaultColumns.map((key) => [key, ""]))];
+        ? campaignData.map((entry) => ensureDefaultColumns(entry))
+        : [ensureDefaultColumns({})];
 
     const worksheet = XLSX.utils.json_to_sheet(output, {
       header: defaultColumns,
     });
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Campaign");
     XLSX.writeFile(workbook, "Video_Campaign_Upload_Template.xlsx");
   } catch (error) {
     console.error("Error downloading Excel file:", error);
-    showError("❌ Error downloading Excel file. Please try again.");
+    showError("Failed to download Excel file. Please try again.");
   }
 };
 
 // Form Functions
 const clearForm = () => {
-  document.getElementById("campaignForm").reset();
+  elements.form.reset();
   hideError();
 };
 
 const clearTemplate = () => {
   campaignData = [];
-  campaignList.innerHTML = "";
+  updateCampaignList();
   hideError();
+};
+
+const addCampaign = () => {
+  hideError();
+
+  const validation = validateRequiredFields();
+  if (!validation.isValid) {
+    showError(validation.message);
+    return;
+  }
+
+  const campaignId = addCampaignToCampaignData(validation.data);
+  updateCampaignList();
+  showSuccess();
 };
 
 // Modal Functions
 const showModal = () => {
-  document.getElementById("videoModal").classList.remove("hidden");
+  elements.videoModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
 };
 
 const hideModal = () => {
-  document.getElementById("videoModal").classList.add("hidden");
+  elements.videoModal.classList.add("hidden");
+  document.body.style.overflow = "unset";
 };
 
 // Event Listeners
-document.addEventListener("DOMContentLoaded", () => {
-  // Add to Template button
-  document.getElementById("addTemplate").addEventListener("click", () => {
-    hideError();
+const initializeEventListeners = () => {
+  // Button events
+  elements.addCampaign.addEventListener("click", addCampaign);
+  elements.clearForm.addEventListener("click", clearForm);
+  elements.clearTemplate.addEventListener("click", clearTemplate);
+  elements.downloadExcel.addEventListener("click", downloadExcel);
+  elements.videoHelpBtn.addEventListener("click", showModal);
 
-    const validation = validateRequiredFields();
-    if (!validation.isValid) {
-      showError("❌ Please fill in all required fields marked with *");
-      return;
-    }
+  // Alert events
+  elements.closeError.addEventListener("click", hideError);
 
-    const country = document.getElementById("country").value;
-    const portfolioId = document.getElementById("portfolioId").value.trim();
-    const campaignType = document.getElementById("campaignType").value;
-    const negativeKeywords = document
-      .getElementById("negativeKeywords")
-      .value.trim()
-      .split("\n")
-      .filter(Boolean);
-
-    const formData = {
-      productNumber: validation.productNumber,
-      sku: validation.sku,
-      asin: validation.asin,
-      videoId: validation.videoId,
-      keywords: validation.keywords,
-      negativeKeywords,
-      portfolioId,
-      country,
-      campaignType,
-    };
-
-    const campaignId = addCampaignToCampaignData(formData);
-    addCampaignToUI(campaignId);
-  });
-
-  // Download Excel button
-  document
-    .getElementById("downloadExcel")
-    .addEventListener("click", downloadExcel);
-
-  // Clear Fields button
-  document.getElementById("clearFields").addEventListener("click", clearForm);
-
-  // Clear Template button
-  document
-    .getElementById("clearTemplate")
-    .addEventListener("click", clearTemplate);
-
-  // Modal buttons
-  document.getElementById("videoHelpBtn").addEventListener("click", showModal);
-  document.getElementById("closeModal").addEventListener("click", hideModal);
+  // Modal events
+  elements.closeModal.addEventListener("click", hideModal);
+  elements.closeModalBtn.addEventListener("click", hideModal);
 
   // Close modal when clicking outside
-  document.getElementById("videoModal").addEventListener("click", (e) => {
-    if (e.target.id === "videoModal") {
+  elements.videoModal.addEventListener("click", (e) => {
+    if (e.target === elements.videoModal) {
       hideModal();
     }
   });
@@ -300,7 +389,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Ctrl+Enter to add to template
     if (e.ctrlKey && e.key === "Enter") {
-      document.getElementById("addTemplate").click();
+      addCampaign();
     }
   });
+
+  // Form input events to clear errors
+  const formInputs = [
+    elements.productNumber,
+    elements.sku,
+    elements.asin,
+    elements.videoId,
+    elements.keywords,
+  ];
+
+  formInputs.forEach((input) => {
+    input.addEventListener("input", hideError);
+  });
+};
+
+// Initialize the application
+document.addEventListener("DOMContentLoaded", () => {
+  initializeEventListeners();
+  updateCampaignList();
 });

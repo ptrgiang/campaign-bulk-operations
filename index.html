@@ -2,247 +2,625 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Create Video Campaign</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Campaign Creator</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA0MP3AP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIiIiAAAAACIiIiIiAAACIiIiIiIgACIRESIRESAAIhESIiIRIgAiIgIiICIiACIiAiIgIiIAAiIiIiIiIgAAIiIiIiIiAAACIiAiIiIAAAIiICIiIAAAACIgIiIgAAAAIiICIgAAAAACIgAAAAAAAAAAAAAADwDwAAwAMAAIABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAwAAAAOAAAADwAQAA8AEAAPADAAD4fwAA"
+      rel="icon"
+      type="image/x-icon"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="style.css" />
   </head>
-  <body class="bg-gray-100 py-10">
-    <div
-      class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden px-8 py-10 space-y-10"
-    >
-      <h1 class="text-3xl font-bold text-center text-gray-800">
-        Create Sponsored Brands Video Campaign
-      </h1>
-
-      <form id="campaignForm" class="space-y-10">
-        <!-- Basic Information -->
-        <div class="space-y-6">
-          <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">
-            Basic Information
-          </h2>
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label
-                for="country"
-                class="block text-sm font-medium text-gray-700"
-                >Country</label
-              >
-              <select
-                id="country"
-                required
-                class="w-full mt-1 p-3 border rounded-lg bg-gray-50"
-              >
-                <option value="US">United States</option>
-                <option value="CA">Canada</option>
-              </select>
-            </div>
-            <div>
-              <label
-                for="campaignType"
-                class="block text-sm font-medium text-gray-700"
-                >Campaign Type</label
-              >
-              <select
-                id="campaignType"
-                class="w-full mt-1 p-3 border rounded-lg bg-gray-50"
-              >
-                <option value="broad">Video Ads Broad</option>
-                <option value="phrase">Video Ads Phrase</option>
-                <option value="exact">Video Ads Exact</option>
-              </select>
-            </div>
-            <div>
-              <label
-                for="portfolioId"
-                class="block text-sm font-medium text-gray-700"
-                >Portfolio ID
-                <span class="text-gray-400">(optional)</span></label
-              >
-              <div class="flex gap-2 mt-1">
-                <input
-                  type="text"
-                  id="portfolioId"
-                  class="flex-1 p-3 border rounded-lg bg-gray-50"
-                />
-                <button
-                  type="button"
-                  onclick="window.open('https://docs.google.com/spreadsheets/d/e/2PACX-1vSGHt7CfqrunDBeX-eOXTCsNlk-QnsttLhF3YtS10s11IUWXm_CJtbhFlVEG-6_J2MaAwSH85rGwL-u/pubhtml?gid=1772766919&single=true')"
-                  class="text-sm text-blue-600 hover:underline"
-                >
-                  Check
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product Details -->
-        <div class="space-y-6">
-          <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">
-            Product Details
-          </h2>
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label
-                for="productNumber"
-                class="block text-sm font-medium text-gray-700"
-                >Product Number <span class="text-red-500">*</span></label
-              >
-              <input
-                type="text"
-                id="productNumber"
-                class="w-full mt-1 p-3 border rounded-lg bg-gray-50"
-              />
-            </div>
-            <div>
-              <label for="sku" class="block text-sm font-medium text-gray-700"
-                >SKU <span class="text-red-500">*</span></label
-              >
-              <input
-                type="text"
-                id="sku"
-                class="w-full mt-1 p-3 border rounded-lg bg-gray-50"
-              />
-            </div>
-            <div>
-              <label for="asin" class="block text-sm font-medium text-gray-700"
-                >ASIN <span class="text-red-500">*</span></label
-              >
-              <input
-                type="text"
-                id="asin"
-                class="w-full mt-1 p-3 border rounded-lg bg-gray-50"
-              />
-            </div>
-            <div>
-              <label
-                for="videoId"
-                class="block text-sm font-medium text-gray-700"
-                >Video Media ID <span class="text-red-500">*</span></label
-              >
-              <div class="flex gap-2 mt-1">
-                <input
-                  type="text"
-                  id="videoId"
-                  class="flex-1 p-3 border rounded-lg bg-gray-50"
-                />
-                <button
-                  type="button"
-                  id="videoHelpBtn"
-                  class="text-sm text-blue-600 hover:underline"
-                >
-                  How to get
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Keywords Section -->
-        <div class="space-y-6">
-          <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">
-            Keywords
-          </h2>
-          <div class="grid md:grid-cols-2 gap-6">
-            <div>
-              <label
-                for="keywords"
-                class="block text-sm font-medium text-gray-700"
-                >Targeting Keywords <span class="text-red-500">*</span
-                ><br /><span class="text-xs text-gray-400"
-                  >(one per line)</span
-                ></label
-              >
-              <textarea
-                id="keywords"
-                class="w-full mt-1 p-3 border rounded-lg resize-none bg-gray-50 h-32"
-              ></textarea>
-            </div>
-            <div>
-              <label
-                for="negativeKeywords"
-                class="block text-sm font-medium text-gray-700"
-                >Negative Keywords<br /><span class="text-xs text-gray-400"
-                  >(one per line)</span
-                ></label
-              >
-              <textarea
-                id="negativeKeywords"
-                class="w-full mt-1 p-3 border rounded-lg resize-none bg-gray-50 h-32"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="space-y-4 text-center">
-          <div class="flex flex-wrap justify-center gap-4">
-            <button
-              id="clearFields"
-              type="button"
-              class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg transition"
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-content">
+          <div class="header-icon">
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
             >
-              Clear Fields
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+          </div>
+          <h1>Video Campaign Creator</h1>
+          <div class="sparkle">✨</div>
+        </div>
+        <p class="header-subtitle">
+          Create professional sponsored brands video campaigns with ease
+        </p>
+      </div>
+
+      <!-- Main Form -->
+      <div class="form-container">
+        <form id="campaignForm">
+          <!-- Basic Information Section -->
+          <div class="section">
+            <div class="section-header">
+              <div class="section-icon blue">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path
+                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                  ></path>
+                </svg>
+              </div>
+              <h2>Basic Information</h2>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="country">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path
+                      d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                    ></path>
+                  </svg>
+                  Country
+                </label>
+                <select id="country" class="form-control">
+                  <option value="US">🇺🇸 United States</option>
+                  <option value="CA">🇨🇦 Canada</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="campaignType">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="6"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                  </svg>
+                  Campaign Type
+                </label>
+                <select id="campaignType" class="form-control">
+                  <option value="broad">Video Ads Broad</option>
+                  <option value="phrase">Video Ads Phrase</option>
+                  <option value="exact">Video Ads Exact</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="portfolioId">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect
+                      x="2"
+                      y="3"
+                      width="20"
+                      height="14"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </svg>
+                  Portfolio ID
+                  <span class="optional">(optional)</span>
+                </label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="portfolioId"
+                    class="form-control"
+                    placeholder="Enter portfolio ID"
+                  />
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    onclick="window.open('https://docs.google.com/spreadsheets/d/e/2PACX-1vSGHt7CfqrunDBeX-eOXTCsNlk-QnsttLhF3YtS10s11IUWXm_CJtbhFlVEG-6_J2MaAwSH85rGwL-u/pubhtml?gid=1772766919&single=true')"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                      ></path>
+                      <polyline points="15,3 21,3 21,9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    Check
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Details Section -->
+          <div class="section">
+            <div class="section-header">
+              <div class="section-icon purple">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+                  <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                  ></path>
+                  <polyline points="3.27,6.96 12,12.01 20.73,6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+              </div>
+              <h2>Product Details</h2>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="productNumber">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <line x1="4" y1="9" x2="20" y2="9"></line>
+                    <line x1="4" y1="15" x2="20" y2="15"></line>
+                    <line x1="10" y1="3" x2="8" y2="21"></line>
+                    <line x1="16" y1="3" x2="14" y2="21"></line>
+                  </svg>
+                  Product Number
+                  <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="productNumber"
+                  class="form-control"
+                  placeholder="Enter product number"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="sku">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+                    <path
+                      d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                    ></path>
+                    <polyline points="3.27,6.96 12,12.01 20.73,6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
+                  SKU
+                  <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="sku"
+                  class="form-control"
+                  placeholder="Enter SKU"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="asin">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path
+                      d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                    ></path>
+                  </svg>
+                  ASIN
+                  <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="asin"
+                  class="form-control"
+                  placeholder="Enter ASIN"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="videoId">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                    <rect
+                      x="1"
+                      y="5"
+                      width="15"
+                      height="14"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                  </svg>
+                  Video Media ID
+                  <span class="required">*</span>
+                </label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="videoId"
+                    class="form-control"
+                    placeholder="Enter video media ID"
+                    required
+                  />
+                  <button type="button" class="btn-secondary" id="videoHelpBtn">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Help
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Keywords Section -->
+          <div class="section">
+            <div class="section-header">
+              <div class="section-icon emerald">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+              </div>
+              <h2>Keywords</h2>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="keywords">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="M21 21l-4.35-4.35"></path>
+                  </svg>
+                  Targeting Keywords
+                  <span class="required">*</span>
+                </label>
+                <p class="field-hint">One keyword per line</p>
+                <textarea
+                  id="keywords"
+                  class="form-control"
+                  rows="6"
+                  placeholder="Enter keywords, one per line..."
+                  required
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="negativeKeywords">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                  Negative Keywords
+                </label>
+                <p class="field-hint">One keyword per line</p>
+                <textarea
+                  id="negativeKeywords"
+                  class="form-control"
+                  rows="6"
+                  placeholder="Enter negative keywords, one per line..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Alert -->
+          <div id="errorAlert" class="alert alert-error hidden">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            <span id="errorMessage"></span>
+            <button type="button" class="alert-close" id="closeError">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
-            <button
-              id="clearTemplate"
-              type="button"
-              class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition"
+          </div>
+
+          <!-- Success Alert -->
+          <div id="successAlert" class="alert alert-success hidden">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
             >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22,4 12,14.01 9,11.01"></polyline>
+            </svg>
+            <span>Campaign added successfully!</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button type="button" id="clearForm" class="btn btn-warning">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="1,4 1,10 7,10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              Clear Form
+            </button>
+
+            <button type="button" id="clearTemplate" class="btn btn-gray">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="3,6 5,6 21,6"></polyline>
+                <path
+                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                ></path>
+              </svg>
               Clear Template
             </button>
-            <button
-              id="addTemplate"
-              type="button"
-              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition"
-            >
+
+            <button type="button" id="addCampaign" class="btn btn-primary">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
               Add to Template
             </button>
-            <button
-              id="downloadExcel"
-              type="button"
-              class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition"
-            >
+
+            <button type="button" id="downloadExcel" class="btn btn-success">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7,10 12,15 17,10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
               Download Excel
             </button>
           </div>
-          <div
-            id="formError"
-            class="text-red-600 font-semibold hidden mt-2"
-          ></div>
-        </div>
-      </form>
+        </form>
 
-      <!-- Campaign List -->
-      <div
-        class="mt-6 bg-gray-100 p-4 rounded-lg max-h-56 overflow-y-auto text-sm text-gray-800 border border-dashed"
-      >
-        <div id="campaignList" class="space-y-2"></div>
+        <!-- Campaign List -->
+        <div class="campaign-list-section">
+          <div class="section-header">
+            <div class="section-icon green">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </div>
+            <h3 id="campaignListTitle">Campaign Template (0)</h3>
+          </div>
+
+          <div id="campaignList" class="campaign-list">
+            <div class="empty-state">
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+              <p>No campaigns added yet</p>
+              <span>Add your first campaign to see it here</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Video Modal -->
-    <div
-      id="videoModal"
-      class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50"
-    >
-      <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-        <h3 class="text-lg font-semibold mb-4">How to get Video Media ID</h3>
-        <p class="text-gray-700 mb-6">
-          Go to your ad console, navigate to <strong>Assets > Video</strong> and
-          upload your video first. You'll find the Video Media ID associated
-          with each uploaded video.
-        </p>
-        <div class="text-right">
-          <button
-            id="closeModal"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
-          >
-            Close
+    <div id="videoModal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-icon">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polygon points="23 7 16 12 23 17 23 7"></polygon>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+          </div>
+          <h3>Video Media ID Help</h3>
+          <button type="button" class="modal-close" id="closeModal">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-content">
+          <p>To get your Video Media ID, follow these steps:</p>
+
+          <div class="info-box">
+            <ol>
+              <li>Go to your Amazon Ad Console</li>
+              <li>Navigate to <strong>Assets → Video</strong></li>
+              <li>Upload your video file</li>
+              <li>Copy the Video Media ID from the uploaded video</li>
+            </ol>
+          </div>
+
+          <div class="warning-box">
+            <p>
+              <strong>Note:</strong> You must upload your video to Amazon's
+              asset library before you can use it in campaigns.
+            </p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="closeModalBtn">
+            Got it
           </button>
         </div>
       </div>
