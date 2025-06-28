@@ -152,7 +152,8 @@ const hideError = () => {
   elements.errorAlert.classList.add("hidden");
 };
 
-const showSuccess = () => {
+const showSuccess = (message = "Campaign added successfully!") => {
+  elements.successAlert.querySelector("span").textContent = message;
   elements.successAlert.classList.remove("hidden");
   elements.errorAlert.classList.add("hidden");
   setTimeout(() => {
@@ -178,8 +179,27 @@ const addCampaignToCampaignData = (formData) => {
   const campaignId = createCampaignId(productNumber, sku, campaignType);
   const brandEntityId = getBrandEntityId(country);
 
+  // Check if campaign already exists and find its position
+  const existingCampaignIndex = campaignData.findIndex(
+    (entry) => entry["Campaign Id"] === campaignId
+  );
+  const isReplacement = existingCampaignIndex !== -1;
+  let insertPosition = campaignData.length; // Default to end
+
+  // If replacing, find the position of the first entry for this campaign
+  if (isReplacement) {
+    insertPosition = existingCampaignIndex;
+    // Remove all existing entries for this campaign
+    campaignData = campaignData.filter(
+      (entry) => entry["Campaign Id"] !== campaignId
+    );
+  }
+
+  // Prepare new campaign data
+  const newCampaignData = [];
+
   // Add main campaign
-  campaignData.push(
+  newCampaignData.push(
     ensureDefaultColumns({
       Product: "Sponsored Brands",
       Entity: "Campaign",
@@ -203,7 +223,7 @@ const addCampaignToCampaignData = (formData) => {
 
   // Add keywords
   keywords.forEach((keyword) => {
-    campaignData.push(
+    newCampaignData.push(
       ensureDefaultColumns({
         Product: "Sponsored Brands",
         Entity: "Keyword",
@@ -219,7 +239,7 @@ const addCampaignToCampaignData = (formData) => {
 
   // Add negative keywords
   negativeKeywords.forEach((keyword) => {
-    campaignData.push(
+    newCampaignData.push(
       ensureDefaultColumns({
         Product: "Sponsored Brands",
         Entity: "Negative Keyword",
@@ -232,13 +252,24 @@ const addCampaignToCampaignData = (formData) => {
     );
   });
 
-  return campaignId;
+  // Insert new campaign data at the correct position
+  campaignData.splice(insertPosition, 0, ...newCampaignData);
+
+  return { campaignId, isReplacement };
 };
 
 const updateCampaignList = () => {
-  const campaignIds = [
-    ...new Set(campaignData.map((c) => c["Campaign Id"]).filter(Boolean)),
-  ];
+  // Get unique campaign IDs in the order they appear in campaignData
+  const campaignIds = [];
+  const seen = new Set();
+
+  campaignData.forEach((entry) => {
+    const campaignId = entry["Campaign Id"];
+    if (campaignId && !seen.has(campaignId)) {
+      campaignIds.push(campaignId);
+      seen.add(campaignId);
+    }
+  });
 
   // Update title
   elements.campaignListTitle.textContent = `Campaign Template (${campaignIds.length})`;
@@ -341,9 +372,14 @@ const addCampaign = () => {
     return;
   }
 
-  const campaignId = addCampaignToCampaignData(validation.data);
+  const result = addCampaignToCampaignData(validation.data);
   updateCampaignList();
-  showSuccess();
+
+  // Show appropriate success message
+  const message = result.isReplacement
+    ? "Campaign replaced successfully!"
+    : "Campaign added successfully!";
+  showSuccess(message);
 };
 
 // Modal Functions
