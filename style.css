@@ -426,11 +426,32 @@ textarea.form-control {
   color: #1d4ed8;
 }
 
+.campaign-edit {
+  background: none;
+  border: none;
+  color: #f59e0b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.campaign-item:hover .campaign-edit {
+  opacity: 1;
+}
+
+.campaign-edit:hover {
+  background: #fef3c7;
+  color: #d97706;
+}
+
 .campaign-info {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
+
 
 .campaign-check {
   color: #16a34a;

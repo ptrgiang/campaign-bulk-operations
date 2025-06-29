@@ -81,6 +81,15 @@ const elements = {
   confirmationMessage: document.getElementById("confirmationMessage"),
   cancelConfirmation: document.getElementById("cancelConfirmation"),
   confirmAction: document.getElementById("confirmAction"),
+
+  // Edit Modal
+  editModal: document.getElementById("editModal"),
+  closeEditModal: document.getElementById("closeEditModal"),
+  editModalTitle: document.getElementById("editModalTitle"),
+  editModalMessage: document.getElementById("editModalMessage"),
+  editModalInput: document.getElementById("editModalInput"),
+  cancelEdit: document.getElementById("cancelEdit"),
+  saveEdit: document.getElementById("saveEdit"),
 };
 
 // Utility Functions
@@ -171,6 +180,8 @@ const showSuccess = (message = "Campaign added successfully!") => {
     successSpan.innerHTML = `Campaign <strong style="color: #f59e0b; font-weight: 700;">REPLACED</strong> successfully!`;
   } else if (message.toLowerCase().includes("copied")) {
     successSpan.innerHTML = `Campaign <strong style="color: #2563eb; font-weight: 700;">COPIED</strong> to form!`;
+  } else if (message.toLowerCase().includes("updated")) {
+    successSpan.innerHTML = `Campaign <strong style="color: #059669; font-weight: 700;">UPDATED</strong> successfully!`;
   } else {
     successSpan.innerHTML = `Campaign <strong style="color: #16a34a; font-weight: 700;">ADDED</strong> successfully!`;
   }
@@ -335,13 +346,24 @@ const updateCampaignList = () => {
                 <span class="campaign-name">${campaignId}</span>
             </div>
             <div class="campaign-actions">
-              <button type="button" class="campaign-copy" onclick="copyCampaignToForm('${campaignId}')">
+              <button type="button" class="campaign-edit" title="Edit Budget" onclick="showEditModal('${campaignId}', 'budget')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.5.6.11.82-.26.82-.58 0-.29-.01-1.25-.01-2.2-2.78.6-3.37-1.18-3.37-1.18-.55-1.4-1.34-1.77-1.34-1.77-1.08-.74.08-.72.08-.72 1.2.08 1.83 1.23 1.83 1.23 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.22.69.83.58A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"></path>
+                </svg>
+              </button>
+              <button type="button" class="campaign-edit" title="Edit Bid" onclick="showEditModal('${campaignId}', 'bid')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </button>
+              <button type="button" class="campaign-copy" title="Copy to form" onclick="copyCampaignToForm('${campaignId}')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
               </button>
-              <button type="button" class="campaign-remove" onclick="removeCampaign('${campaignId}')">
+              <button type="button" class="campaign-remove" title="Delete campaign" onclick="removeCampaign('${campaignId}')">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
                       <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -404,6 +426,70 @@ const copyCampaignToForm = (campaignId) => {
   showSuccess("Campaign copied to form!");
 };
 window.copyCampaignToForm = copyCampaignToForm;
+
+// Edit Modal Functions
+let editCallback = null;
+
+const showEditModal = (campaignId, type) => {
+  const campaign = campaignData.find((entry) => entry["Campaign Id"] === campaignId);
+  if (!campaign) return;
+
+  let currentValue;
+  let message;
+  let title;
+
+  if (type === 'budget') {
+    const campaignEntry = campaignData.find(c => c["Campaign Id"] === campaignId && c.Entity === "Campaign");
+    currentValue = campaignEntry.Budget;
+    title = "Edit Budget";
+    message = `Current budget for "${campaignId}" is ${currentValue}. Enter the new budget:`;
+    elements.editModalInput.step = "1";
+  } else if (type === 'bid') {
+    const keywordEntry = campaignData.find(c => c["Campaign Id"] === campaignId && c.Entity === "Keyword");
+    currentValue = keywordEntry.Bid;
+    title = "Edit Bid";
+    message = `Current bid for all keywords in "${campaignId}" is ${currentValue}. Enter the new bid:`;
+    elements.editModalInput.step = "0.01";
+  }
+
+  elements.editModalTitle.textContent = title;
+  elements.editModalMessage.textContent = message;
+  elements.editModalInput.value = currentValue;
+  elements.editModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+
+  editCallback = (newValue) => {
+    if (type === 'budget') {
+      campaignData.forEach(entry => {
+        if (entry["Campaign Id"] === campaignId && entry.Entity === "Campaign") {
+          entry.Budget = newValue;
+        }
+      });
+    } else if (type === 'bid') {
+      campaignData.forEach(entry => {
+        if (entry["Campaign Id"] === campaignId && entry.Entity === "Keyword") {
+          entry.Bid = newValue;
+        }
+      });
+    }
+    hideEditModal();
+    showSuccess(`Successfully updated ${type} for "${campaignId}"!`);
+  };
+};
+window.showEditModal = showEditModal;
+
+const hideEditModal = () => {
+  elements.editModal.classList.add("hidden");
+  document.body.style.overflow = "unset";
+  editCallback = null;
+};
+
+const saveEditAndHide = () => {
+  const newValue = parseFloat(elements.editModalInput.value);
+  if (editCallback && !isNaN(newValue)) {
+    editCallback(newValue);
+  }
+};
 
 // Drag and Drop Functionality
 
@@ -586,6 +672,9 @@ const initializeEventListeners = () => {
   elements.closeConfirmationModal.addEventListener("click", hideConfirmation);
   elements.cancelConfirmation.addEventListener("click", hideConfirmation);
   elements.confirmAction.addEventListener("click", confirmAndHide);
+  elements.closeEditModal.addEventListener("click", hideEditModal);
+  elements.cancelEdit.addEventListener("click", hideEditModal);
+  elements.saveEdit.addEventListener("click", saveEditAndHide);
 
   // Close modal when clicking outside
   elements.videoModal.addEventListener("click", (e) => {
