@@ -70,6 +70,17 @@ const elements = {
   videoModal: document.getElementById("videoModal"),
   closeModal: document.getElementById("closeModal"),
   closeModalBtn: document.getElementById("closeModalBtn"),
+
+  // Theme
+  themeToggle: document.getElementById("themeToggle"),
+  themeIcon: document.getElementById("themeIcon"),
+
+  // Confirmation Modal
+  confirmationModal: document.getElementById("confirmationModal"),
+  closeConfirmationModal: document.getElementById("closeConfirmationModal"),
+  confirmationMessage: document.getElementById("confirmationMessage"),
+  cancelConfirmation: document.getElementById("cancelConfirmation"),
+  confirmAction: document.getElementById("confirmAction"),
 };
 
 // Utility Functions
@@ -155,9 +166,11 @@ const hideError = () => {
 const showSuccess = (message = "Campaign added successfully!") => {
   const successSpan = elements.successAlert.querySelector("span");
 
-  // Determine if it's an "added" or "replaced" action and style accordingly
+  // Determine the action and style accordingly
   if (message.toLowerCase().includes("replaced")) {
     successSpan.innerHTML = `Campaign <strong style="color: #f59e0b; font-weight: 700;">REPLACED</strong> successfully!`;
+  } else if (message.toLowerCase().includes("copied")) {
+    successSpan.innerHTML = `Campaign <strong style="color: #2563eb; font-weight: 700;">COPIED</strong> to form!`;
   } else {
     successSpan.innerHTML = `Campaign <strong style="color: #16a34a; font-weight: 700;">ADDED</strong> successfully!`;
   }
@@ -165,7 +178,7 @@ const showSuccess = (message = "Campaign added successfully!") => {
   elements.successAlert.classList.remove("hidden");
   elements.errorAlert.classList.add("hidden");
 
-  // Auto-hide after 4 seconds (longer to ensure user sees the action)
+  // Auto-hide after 4 seconds
   setTimeout(() => {
     elements.successAlert.classList.add("hidden");
   }, 4000);
@@ -307,18 +320,34 @@ const updateCampaignList = () => {
       (campaignId) => `
         <div class="campaign-item" data-campaign-id="${campaignId}">
             <div class="campaign-info">
+                <svg class="drag-handle" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="cursor: grab;">
+                    <circle cx="9" cy="12" r="1"></circle>
+                    <circle cx="9" cy="5" r="1"></circle>
+                    <circle cx="9" cy="19" r="1"></circle>
+                    <circle cx="15" cy="12" r="1"></circle>
+                    <circle cx="15" cy="5" r="1"></circle>
+                    <circle cx="15" cy="19" r="1"></circle>
+                </svg>
                 <svg class="campaign-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22,4 12,14.01 9,11.01"></polyline>
                 </svg>
                 <span class="campaign-name">${campaignId}</span>
             </div>
-            <button type="button" class="campaign-remove" onclick="removeCampaign('${campaignId}')">
+            <div class="campaign-actions">
+              <button type="button" class="campaign-copy" onclick="copyCampaignToForm('${campaignId}')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
-            </button>
+              </button>
+              <button type="button" class="campaign-remove" onclick="removeCampaign('${campaignId}')">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+              </button>
+            </div>
         </div>
     `
     )
@@ -326,14 +355,92 @@ const updateCampaignList = () => {
 };
 
 const removeCampaign = (campaignId) => {
-  campaignData = campaignData.filter(
-    (entry) => entry["Campaign Id"] !== campaignId
+  showConfirmation(
+    `Are you sure you want to remove the campaign "${campaignId}"?`,
+    () => {
+      campaignData = campaignData.filter(
+        (entry) => entry["Campaign Id"] !== campaignId
+      );
+      updateCampaignList();
+    }
   );
-  updateCampaignList();
 };
 
 // Make removeCampaign globally accessible
 window.removeCampaign = removeCampaign;
+
+const copyCampaignToForm = (campaignId) => {
+  const campaign = campaignData.find((entry) => entry["Campaign Id"] === campaignId);
+  if (!campaign) return;
+
+  const campaignEntries = campaignData.filter(
+    (entry) => entry["Campaign Id"] === campaignId
+  );
+
+  const mainCampaign = campaignEntries.find((e) => e.Entity === "Campaign");
+  const keywords = campaignEntries
+    .filter((e) => e.Entity === "Keyword")
+    .map((e) => e["Keyword Text"]);
+  const negativeKeywords = campaignEntries
+    .filter((e) => e.Entity === "Negative Keyword")
+    .map((e) => e["Keyword Text"]);
+
+  if (mainCampaign) {
+    const campaignIdParts = mainCampaign["Campaign Id"].split(" ");
+    elements.productNumber.value = campaignIdParts[0] || "";
+    elements.sku.value = campaignIdParts[1] || "";
+    elements.portfolioId.value = mainCampaign["Portfolio Id"] || "";
+    elements.asin.value = mainCampaign["Creative asins"] || "";
+    elements.videoId.value = mainCampaign["Video Media Ids"] || "";
+  }
+
+  elements.keywords.value = keywords.join("\n");
+  elements.negativeKeywords.value = negativeKeywords.join("\n");
+
+  // Scroll to top to see the form has been populated
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // Optional: Flash a success message
+  showSuccess("Campaign copied to form!");
+};
+window.copyCampaignToForm = copyCampaignToForm;
+
+// Drag and Drop Functionality
+
+const initializeSortableList = () => {
+  if (elements.campaignList) {
+    new Sortable(elements.campaignList, {
+      animation: 150,
+      handle: ".drag-handle",
+      ghostClass: "sortable-ghost",
+      onEnd: (evt) => {
+        const campaignId = evt.item.dataset.campaignId;
+        const newIndex = evt.newIndex;
+        const oldIndex = evt.oldIndex;
+
+        if (newIndex === oldIndex) {
+          return;
+        }
+
+        // Get all unique campaign IDs in their new order from the DOM
+        const orderedCampaignIds = Array.from(
+          elements.campaignList.querySelectorAll(".campaign-item")
+        ).map((item) => item.dataset.campaignId);
+
+        // Reorder the campaignData array to match the new visual order
+        const reorderedCampaignData = [];
+        orderedCampaignIds.forEach((id) => {
+          const campaignEntries = campaignData.filter(
+            (entry) => entry["Campaign Id"] === id
+          );
+          reorderedCampaignData.push(...campaignEntries);
+        });
+
+        campaignData = reorderedCampaignData;
+      },
+    });
+  }
+};
 
 // Excel Functions
 const downloadExcel = async () => {
@@ -363,14 +470,18 @@ const downloadExcel = async () => {
 
 // Form Functions
 const clearForm = () => {
-  elements.form.reset();
-  hideError();
+  showConfirmation("Are you sure you want to clear the form?", () => {
+    elements.form.reset();
+    hideError();
+  });
 };
 
 const clearTemplate = () => {
-  campaignData = [];
-  updateCampaignList();
-  hideError();
+  showConfirmation("Are you sure you want to clear the entire template?", () => {
+    campaignData = [];
+    updateCampaignList();
+    hideError();
+  });
 };
 
 const addCampaign = () => {
@@ -403,6 +514,59 @@ const hideModal = () => {
   document.body.style.overflow = "unset";
 };
 
+// Confirmation Modal Functions
+let confirmationCallback = null;
+
+const showConfirmation = (message, callback) => {
+  elements.confirmationMessage.textContent = message;
+  elements.confirmationModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  confirmationCallback = callback;
+};
+
+const hideConfirmation = () => {
+  elements.confirmationModal.classList.add("hidden");
+  document.body.style.overflow = "unset";
+  confirmationCallback = null;
+};
+
+const confirmAndHide = () => {
+  if (confirmationCallback) {
+    confirmationCallback();
+  }
+  hideConfirmation();
+};
+
+// Theme Functions
+const setLightTheme = () => {
+  document.body.classList.remove("dark-mode");
+  elements.themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+  localStorage.setItem("theme", "light");
+};
+
+const setDarkTheme = () => {
+  document.body.classList.add("dark-mode");
+  elements.themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+  localStorage.setItem("theme", "dark");
+};
+
+const toggleTheme = () => {
+  if (document.body.classList.contains("dark-mode")) {
+    setLightTheme();
+  } else {
+    setDarkTheme();
+  }
+};
+
+const applyInitialTheme = () => {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") {
+    setDarkTheme();
+  } else {
+    setLightTheme();
+  }
+};
+
 // Event Listeners
 const initializeEventListeners = () => {
   // Button events
@@ -411,6 +575,7 @@ const initializeEventListeners = () => {
   elements.clearTemplate.addEventListener("click", clearTemplate);
   elements.downloadExcel.addEventListener("click", downloadExcel);
   elements.videoHelpBtn.addEventListener("click", showModal);
+  elements.themeToggle.addEventListener("click", toggleTheme);
 
   // Alert events
   elements.closeError.addEventListener("click", hideError);
@@ -418,6 +583,9 @@ const initializeEventListeners = () => {
   // Modal events
   elements.closeModal.addEventListener("click", hideModal);
   elements.closeModalBtn.addEventListener("click", hideModal);
+  elements.closeConfirmationModal.addEventListener("click", hideConfirmation);
+  elements.cancelConfirmation.addEventListener("click", hideConfirmation);
+  elements.confirmAction.addEventListener("click", confirmAndHide);
 
   // Close modal when clicking outside
   elements.videoModal.addEventListener("click", (e) => {
@@ -457,4 +625,6 @@ const initializeEventListeners = () => {
 document.addEventListener("DOMContentLoaded", () => {
   initializeEventListeners();
   updateCampaignList();
+  initializeSortableList();
+  applyInitialTheme();
 });

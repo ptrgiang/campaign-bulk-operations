@@ -16,6 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -27,17 +28,21 @@
               width="32"
               height="32"
               viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
+              fill="#2563eb"
+              stroke="white"
+              stroke-width="1"
             >
-              <polygon points="23 7 16 12 23 17 23 7"></polygon>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
             </svg>
           </div>
-          <h1>Video Campaign Creator</h1>
+          <h1>BlueStars Campaign Creator</h1>
           <div class="sparkle">✨</div>
         </div>
+        <button type="button" id="themeToggle" class="theme-toggle">
+          <svg id="themeIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
         <p class="header-subtitle">
           Create professional sponsored brands video campaigns with ease
         </p>
@@ -565,6 +570,10 @@
       </div>
     </div>
 
+    <footer class="footer">
+      <p>Built for the BlueStars Marketing Team ✨</p>
+    </footer>
+
     <!-- Video Modal -->
     <div id="videoModal" class="modal-overlay hidden">
       <div class="modal">
@@ -622,6 +631,35 @@
           <button type="button" class="btn btn-primary" id="closeModalBtn">
             Got it
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <h3>Are you sure?</h3>
+          <button type="button" class="modal-close" id="closeConfirmationModal">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-content">
+          <p id="confirmationMessage"></p>
+        </div>
+        <div class="modal-footer-confirm">
+          <button type="button" class="btn btn-gray" id="cancelConfirmation">Cancel</button>
+          <button type="button" class="btn btn-warning" id="confirmAction">Confirm</button>
         </div>
       </div>
     </div>
