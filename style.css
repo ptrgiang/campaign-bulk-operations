@@ -592,6 +592,17 @@ textarea.form-control {
   margin: 0;
 }
 
+.warning-box code {
+  display: block;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
 .modal-footer {
   padding: 0 1.5rem 1.5rem;
   display: flex;
