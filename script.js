@@ -4,7 +4,7 @@
 let campaignData = [];
 
 // Default Excel columns
-const defaultColumns = [
+const sponsoredBrandsColumns = [
   "Product",
   "Entity",
   "Operation",
@@ -36,6 +36,36 @@ const defaultColumns = [
   "Creative Type",
 ];
 
+const sponsoredProductsColumns = [
+  "Product",
+  "Entity",
+  "Operation",
+  "Campaign ID",
+  "Ad Group ID",
+  "Portfolio ID",
+  "Ad ID",
+  "Keyword ID",
+  "Product Targeting ID",
+  "Campaign Name",
+  "Ad Group Name",
+  "Start Date",
+  "End Date",
+  "Targeting Type",
+  "State",
+  "Daily Budget",
+  "SKU",
+  "Ad Group Default Bid",
+  "Bid",
+  "Keyword Text",
+  "Native Language Keyword",
+  "Native Language Locale",
+  "Match Type",
+  "Bidding Strategy",
+  "Placement",
+  "Percentage",
+  "Product Targeting Expression",
+];
+
 // DOM Elements
 const elements = {
   form: document.getElementById("campaignForm"),
@@ -48,6 +78,8 @@ const elements = {
   videoId: document.getElementById("videoId"),
   keywords: document.getElementById("keywords"),
   negativeKeywords: document.getElementById("negativeKeywords"),
+  negativeExactKeywords: document.getElementById("negativeExactKeywords"),
+  negativePhraseKeywords: document.getElementById("negativePhraseKeywords"),
 
   // Buttons
   addCampaign: document.getElementById("addCampaign"),
@@ -90,11 +122,69 @@ const elements = {
   editModalInput: document.getElementById("editModalInput"),
   cancelEdit: document.getElementById("cancelEdit"),
   saveEdit: document.getElementById("saveEdit"),
+
+  // Auto Bid Inputs
+  autoBidInputs: document.getElementById("autoBidInputs"),
+  editLooseMatch: document.getElementById("editLooseMatch"),
+  editCloseMatch: document.getElementById("editCloseMatch"),
+  editComplements: document.getElementById("editComplements"),
+  editSubstitutes: document.getElementById("editSubstitutes"),
+
+  // Preview
+  showSbPreview: document.getElementById("showSbPreview"),
+  showSpPreview: document.getElementById("showSpPreview"),
+  previewModal: document.getElementById("previewModal"),
+  closePreviewModal: document.getElementById("closePreviewModal"),
+  previewModalTitle: document.getElementById("previewModalTitle"),
+  previewModalTable: document.getElementById("previewModalTable"),
+
+  // Sections
+  videoIdSection: document.getElementById("videoIdSection"),
+  keywordsSection: document.getElementById("keywordsSection"),
+  productTargetingSection: document.getElementById("productTargetingSection"),
+  ptTargetingSection: document.getElementById("ptTargetingSection"),
+
+  // Product Targeting Inputs
+  looseMatch: document.getElementById("looseMatch"),
+  closeMatch: document.getElementById("closeMatch"),
+  complements: document.getElementById("complements"),
+  substitutes: document.getElementById("substitutes"),
+  competitorAsins: document.getElementById("competitorAsins"),
+};
+
+// UI Functions
+const updateFormUI = () => {
+  const campaignType = elements.campaignType.value;
+
+  // Hide all optional sections first
+  elements.videoIdSection.classList.add("hidden");
+  elements.keywordsSection.classList.add("hidden");
+  elements.productTargetingSection.classList.add("hidden");
+  elements.ptTargetingSection.classList.add("hidden");
+  document.getElementById("negativeKeywordsSection").classList.remove("hidden");
+  document.getElementById("researchNegativeKeywordsSection").classList.add("hidden");
+
+  if (campaignType === "auto") {
+    elements.productTargetingSection.classList.remove("hidden");
+  } else if (campaignType === "pt") {
+    elements.ptTargetingSection.classList.remove("hidden");
+  } else if (campaignType.startsWith("video-")) {
+    elements.videoIdSection.classList.remove("hidden");
+    elements.keywordsSection.classList.remove("hidden");
+  } else if (campaignType === "research") {
+    elements.keywordsSection.classList.remove("hidden");
+    document.getElementById("negativeKeywordsSection").classList.add("hidden");
+    document.getElementById("researchNegativeKeywordsSection").classList.remove("hidden");
+  } else {
+    elements.keywordsSection.classList.remove("hidden");
+  }
 };
 
 // Utility Functions
-const ensureDefaultColumns = (obj) => {
-  return Object.fromEntries(defaultColumns.map((key) => [key, obj[key] ?? ""]));
+const ensureDefaultColumns = (obj, type = "sb") => {
+  const columns =
+    type === "sp" ? sponsoredProductsColumns : sponsoredBrandsColumns;
+  return Object.fromEntries(columns.map((key) => [key, obj[key] ?? ""]));
 };
 
 const getCurrentDate = () => {
@@ -105,19 +195,40 @@ const getBrandEntityId = (country) => {
   return country === "US" ? "ENTITYCQP7AL92VN6L" : "ENTITY2DMN2Z7IO7RFX";
 };
 
+const campaignNameMap = {
+  auto: "Product Number SKU Auto",
+  sp: "Product Number SKU SP",
+  research: "Product Number SKU - Research",
+  performance: "Product Number SKU - Performance",
+  pt: "Product Number SKU PT",
+  "video-broad": "Product Number SKU Video Ads Broad",
+  "video-phrase": "Product Number SKU Video Ads Phrase",
+  "video-exact": "Product Number SKU Video Ads Exact",
+};
+
 const createCampaignId = (productNumber, sku, campaignType) => {
-  return `${productNumber} ${sku} Video Ads ${
+  const template = campaignNameMap[campaignType];
+  if (template) {
+    return template
+      .replace("Product Number", productNumber)
+      .replace("SKU", sku);
+  }
+
+  // Fallback for any unmapped campaign types
+  return `${productNumber} ${sku} ${
     campaignType.charAt(0).toUpperCase() + campaignType.slice(1)
   }`;
 };
 
 // Validation Functions
 const validateRequiredFields = () => {
+  const campaignType = elements.campaignType.value;
   const productNumber = elements.productNumber.value.trim();
   const sku = elements.sku.value.trim();
   const asin = elements.asin.value.trim();
   const videoId = elements.videoId.value.trim();
   const keywords = elements.keywords.value.trim().split("\n").filter(Boolean);
+  const competitorAsins = elements.competitorAsins.value.trim().split("\n").filter(Boolean);
 
   if (!productNumber) {
     return { isValid: false, message: "Product Number is required" };
@@ -131,11 +242,18 @@ const validateRequiredFields = () => {
     return { isValid: false, message: "ASIN is required" };
   }
 
-  if (!videoId) {
+  if (campaignType.startsWith("video-") && !videoId) {
     return { isValid: false, message: "Video Media ID is required" };
   }
 
-  if (keywords.length === 0) {
+  if (campaignType === "pt" && competitorAsins.length === 0) {
+    return {
+      isValid: false,
+      message: "At least one Competitor ASIN is required",
+    };
+  }
+
+  if (campaignType !== "auto" && campaignType !== "pt" && keywords.length === 0) {
     return {
       isValid: false,
       message: "At least one targeting keyword is required",
@@ -150,7 +268,16 @@ const validateRequiredFields = () => {
       asin,
       videoId,
       keywords,
+      competitorAsins,
       negativeKeywords: elements.negativeKeywords.value
+        .trim()
+        .split("\n")
+        .filter(Boolean),
+      negativeExactKeywords: elements.negativeExactKeywords.value
+        .trim()
+        .split("\n")
+        .filter(Boolean),
+      negativePhraseKeywords: elements.negativePhraseKeywords.value
         .trim()
         .split("\n")
         .filter(Boolean),
@@ -196,6 +323,184 @@ const showSuccess = (message = "Campaign added successfully!") => {
 };
 
 // Campaign Management Functions
+const entityBuilder = {
+  // SP Functions
+  createSpCampaign(campaignId, portfolioId, today, budget, biddingStrategy, targetingType) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Campaign",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      "Portfolio ID": portfolioId,
+      "Campaign Name": campaignId,
+      "Start Date": today,
+      "Targeting Type": targetingType,
+      State: "Enabled",
+      "Daily Budget": budget,
+      "Bidding Strategy": biddingStrategy,
+    }, "sp");
+  },
+  createSpBiddingAdjustment(campaignId, placement, percentage) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Bidding adjustment",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      Placement: placement,
+      Percentage: percentage,
+    }, "sp");
+  },
+  createSpAdGroup(campaignId, adGroupId, adGroupName, defaultBid) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Ad group",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      "Ad Group ID": adGroupId,
+      "Ad Group Name": adGroupName,
+      State: "Enabled",
+      "Ad Group Default Bid": defaultBid,
+    }, "sp");
+  },
+  createSpProductAd(campaignId, adGroupId, sku) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Product ad",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      "Ad Group ID": adGroupId,
+      SKU: sku,
+      State: "Enabled",
+    }, "sp");
+  },
+  createSpKeyword(campaignId, adGroupId, keyword, matchType, bid) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Keyword",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      "Ad Group ID": adGroupId,
+      State: "Enabled",
+      Bid: bid,
+      "Keyword Text": keyword,
+      "Match Type": matchType,
+    }, "sp");
+  },
+  createSpNegativeKeyword(campaignId, adGroupId, keyword, matchType) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Negative keyword",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      "Ad Group ID": adGroupId,
+      State: "Enabled",
+      "Keyword Text": keyword,
+      "Match Type": matchType,
+    }, "sp");
+  },
+  createSpCampaignNegativeKeyword(campaignId, keyword, matchType) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Campaign negative keyword",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      State: "Enabled",
+      "Keyword Text": keyword,
+      "Match Type": matchType,
+    }, "sp");
+  },
+  createSpProductTargeting(campaignId, adGroupId, expression, bid) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Product targeting",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      "Ad Group ID": adGroupId,
+      State: "Enabled",
+      Bid: bid,
+      "Product Targeting Expression": expression,
+    }, "sp");
+  },
+  createSpNegativeProductTargeting(campaignId, adGroupId, expression) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Products",
+      Entity: "Negative product targeting",
+      Operation: "Create",
+      "Campaign ID": campaignId,
+      "Ad Group ID": adGroupId,
+      State: "Enabled",
+      "Product Targeting Expression": expression,
+    }, "sp");
+  },
+
+  // SB Functions
+  createSbCampaign(campaignId, portfolioId, today, budget, brandEntityId, asin, videoId) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Brands",
+      Entity: "Campaign",
+      Operation: "Create",
+      "Campaign Id": campaignId,
+      "Portfolio Id": portfolioId,
+      "Campaign Name": campaignId,
+      "Start Date": today,
+      State: "Enabled",
+      "Budget Type": "Daily",
+      Budget: budget,
+      "Bid Optimization": "Auto",
+      "Ad Format": "video",
+      "Brand Entity Id": brandEntityId,
+      "Brand Name": "BlueStars",
+      "Creative asins": asin,
+      "Video Media Ids": videoId,
+      "Creative Type": "video",
+    }, "sb");
+  },
+  createSbKeyword(campaignId, keyword, matchType, bid) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Brands",
+      Entity: "Keyword",
+      Operation: "Create",
+      "Campaign Id": campaignId,
+      State: "Enabled",
+      Bid: bid,
+      "Keyword Text": keyword,
+      "Match Type": matchType,
+    }, "sb");
+  },
+  createSbNegativeKeyword(campaignId, keyword, matchType) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Brands",
+      Entity: "Negative Keyword",
+      Operation: "Create",
+      "Campaign Id": campaignId,
+      State: "Enabled",
+      "Keyword Text": keyword,
+      "Match Type": matchType,
+    }, "sb");
+  },
+  createSbProductTargeting(campaignId, expression, bid) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Brands",
+      Entity: "Product targeting",
+      Operation: "Create",
+      "Campaign Id": campaignId,
+      State: "Enabled",
+      Bid: bid,
+      "Product Targeting Expression": expression,
+    }, "sb");
+  },
+  createSbNegativeProductTargeting(campaignId, expression) {
+    return ensureDefaultColumns({
+      Product: "Sponsored Brands",
+      Entity: "Negative product targeting",
+      Operation: "Create",
+      "Campaign Id": campaignId,
+      State: "Enabled",
+      "Product Targeting Expression": expression,
+    }, "sb");
+  },
+};
+
 const addCampaignToCampaignData = (formData) => {
   const {
     productNumber,
@@ -203,7 +508,10 @@ const addCampaignToCampaignData = (formData) => {
     asin,
     videoId,
     keywords,
+    competitorAsins,
     negativeKeywords,
+    negativeExactKeywords,
+    negativePhraseKeywords,
     portfolioId,
     country,
     campaignType,
@@ -215,7 +523,7 @@ const addCampaignToCampaignData = (formData) => {
 
   // Check if campaign already exists and find its position
   const existingCampaignIndex = campaignData.findIndex(
-    (entry) => entry["Campaign Id"] === campaignId
+    (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId
   );
   const isReplacement = existingCampaignIndex !== -1;
   let insertPosition = campaignData.length; // Default to end
@@ -225,66 +533,89 @@ const addCampaignToCampaignData = (formData) => {
     insertPosition = existingCampaignIndex;
     // Remove all existing entries for this campaign
     campaignData = campaignData.filter(
-      (entry) => entry["Campaign Id"] !== campaignId
+      (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) !== campaignId
     );
   }
 
   // Prepare new campaign data
   const newCampaignData = [];
 
-  // Add main campaign
-  newCampaignData.push(
-    ensureDefaultColumns({
-      Product: "Sponsored Brands",
-      Entity: "Campaign",
-      Operation: "Create",
-      "Campaign Id": campaignId,
-      "Portfolio Id": portfolioId,
-      "Campaign Name": campaignId,
-      "Start Date": today,
-      State: "Enabled",
-      "Budget Type": "Daily",
-      Budget: 10,
-      "Bid Optimization": "Auto",
-      "Ad Format": "video",
-      "Brand Entity Id": brandEntityId,
-      "Brand Name": "BlueStars",
-      "Creative asins": asin,
-      "Video Media Ids": videoId,
-      "Creative Type": "video",
-    })
-  );
+  if (campaignType === "auto") {
+    const looseMatchBid = parseFloat(elements.looseMatch.value) || 0;
+    const closeMatchBid = parseFloat(elements.closeMatch.value) || 0;
+    const complementsBid = parseFloat(elements.complements.value) || 0;
+    const substitutesBid = parseFloat(elements.substitutes.value) || 0;
 
-  // Add keywords
-  keywords.forEach((keyword) => {
-    newCampaignData.push(
-      ensureDefaultColumns({
-        Product: "Sponsored Brands",
-        Entity: "Keyword",
-        Operation: "Create",
-        "Campaign Id": campaignId,
-        State: "Enabled",
-        Bid: 0.25,
-        "Keyword Text": keyword,
-        "Match Type": campaignType,
-      })
+    const maxBid = Math.max(
+      looseMatchBid,
+      closeMatchBid,
+      complementsBid,
+      substitutesBid
     );
-  });
 
-  // Add negative keywords
-  negativeKeywords.forEach((keyword) => {
-    newCampaignData.push(
-      ensureDefaultColumns({
-        Product: "Sponsored Brands",
-        Entity: "Negative Keyword",
-        Operation: "Create",
-        "Campaign Id": campaignId,
-        State: "Enabled",
-        "Keyword Text": keyword,
-        "Match Type": "negativePhrase",
-      })
-    );
-  });
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Auto");
+    spCampaign.asin = asin;
+    newCampaignData.push(spCampaign);
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 0));
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement rest of search", 0));
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement product page", 0));
+    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, "Auto", "Auto", maxBid));
+    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, "Auto", sku));
+    newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "Auto", "loose-match", looseMatchBid));
+    newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "Auto", "close-match", closeMatchBid));
+    newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "Auto", "complements", complementsBid));
+    newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "Auto", "substitutes", substitutesBid));
+  } else if (campaignType === "research") {
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    spCampaign.asin = asin;
+    newCampaignData.push(spCampaign);
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 0));
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement rest of search", 0));
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement product page", 0));
+    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, "Research", "Research", 0.25));
+    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, "Research", sku));
+    keywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSpKeyword(campaignId, "Research", keyword, "broad", 0.25));
+    });
+    negativeExactKeywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, "Research", keyword, "negativeExact"));
+    });
+    negativePhraseKeywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, "Research", keyword, "negativePhrase"));
+    });
+  } else if (campaignType === "performance") {
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    spCampaign.asin = asin;
+    newCampaignData.push(spCampaign);
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 0));
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement rest of search", 0));
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement product page", 0));
+    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, "Performance", "Performance", 0.5));
+    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, "Performance", sku));
+    keywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSpKeyword(campaignId, "Performance", keyword, "exact", 0.5));
+    });
+  } else if (campaignType === "pt") {
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    spCampaign.asin = asin;
+    newCampaignData.push(spCampaign);
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 50));
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement rest of search", 0));
+    newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement product page", 0));
+    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, "PT", "PT", 0.25));
+    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, "PT", sku));
+    competitorAsins.forEach((asin) => {
+      newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "PT", `asin="${asin}"`, 0.25));
+    });
+  } else if (campaignType.startsWith("video-")) {
+    newCampaignData.push(entityBuilder.createSbCampaign(campaignId, portfolioId, today, 10, brandEntityId, asin, videoId));
+    keywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSbKeyword(campaignId, keyword, campaignType.replace("video-", ""), 0.25));
+    });
+    negativeKeywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSbNegativeKeyword(campaignId, keyword, "negativePhrase"));
+    });
+  }
 
   // Insert new campaign data at the correct position
   campaignData.splice(insertPosition, 0, ...newCampaignData);
@@ -298,7 +629,7 @@ const updateCampaignList = () => {
   const seen = new Set();
 
   campaignData.forEach((entry) => {
-    const campaignId = entry["Campaign Id"];
+    const campaignId = entry["Campaign Id"] || entry["Campaign ID"];
     if (campaignId && !seen.has(campaignId)) {
       campaignIds.push(campaignId);
       seen.add(campaignId);
@@ -327,8 +658,13 @@ const updateCampaignList = () => {
   }
 
   elements.campaignList.innerHTML = campaignIds
-    .map(
-      (campaignId) => `
+    .map((campaignId) => {
+      const campaign = campaignData.find(
+        (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId
+      );
+      const isAutoCampaign = campaign.Product === "Sponsored Products";
+
+      return `
         <div class="campaign-item" data-campaign-id="${campaignId}">
             <div class="campaign-info">
                 <svg class="drag-handle" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="cursor: grab;">
@@ -372,8 +708,8 @@ const updateCampaignList = () => {
               </button>
             </div>
         </div>
-    `
-    )
+    `;
+    })
     .join("");
 };
 
@@ -382,7 +718,7 @@ const removeCampaign = (campaignId) => {
     `Are you sure you want to remove the campaign "${campaignId}"?`,
     () => {
       campaignData = campaignData.filter(
-        (entry) => entry["Campaign Id"] !== campaignId
+        (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) !== campaignId
       );
       updateCampaignList();
     }
@@ -393,11 +729,13 @@ const removeCampaign = (campaignId) => {
 window.removeCampaign = removeCampaign;
 
 const copyCampaignToForm = (campaignId) => {
-  const campaign = campaignData.find((entry) => entry["Campaign Id"] === campaignId);
+  const campaign = campaignData.find(
+    (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId
+  );
   if (!campaign) return;
 
   const campaignEntries = campaignData.filter(
-    (entry) => entry["Campaign Id"] === campaignId
+    (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId
   );
 
   const mainCampaign = campaignEntries.find((e) => e.Entity === "Campaign");
@@ -407,18 +745,51 @@ const copyCampaignToForm = (campaignId) => {
   const negativeKeywords = campaignEntries
     .filter((e) => e.Entity === "Negative Keyword")
     .map((e) => e["Keyword Text"]);
+  const competitorAsins = campaignEntries
+    .filter((e) => e.Entity === "Product targeting" && e["Product Targeting Expression"].startsWith('asin="'))
+    .map((e) => e["Product Targeting Expression"].replace(/asin=|\"/g, ""));
 
   if (mainCampaign) {
-    const campaignIdParts = mainCampaign["Campaign Id"].split(" ");
+    const campaignIdParts = (
+      mainCampaign["Campaign Id"] || mainCampaign["Campaign ID"]
+    ).split(" ");
     elements.productNumber.value = campaignIdParts[0] || "";
     elements.sku.value = campaignIdParts[1] || "";
-    elements.portfolioId.value = mainCampaign["Portfolio Id"] || "";
-    elements.asin.value = mainCampaign["Creative asins"] || "";
+    elements.portfolioId.value =
+      mainCampaign["Portfolio Id"] || mainCampaign["Portfolio ID"] || "";
     elements.videoId.value = mainCampaign["Video Media Ids"] || "";
+
+    // Set campaign type and update UI
+    const campaignType = Object.keys(campaignNameMap).find(key => campaignNameMap[key] === mainCampaign["Campaign Name"].replace(campaignIdParts[0], "Product Number").replace(campaignIdParts[1], "SKU"));
+    if (campaignType) {
+      elements.campaignType.value = campaignType;
+      updateFormUI();
+
+      if (campaignType === 'auto') {
+        const targetingBids = campaignEntries
+          .filter(e => e.Entity === 'Product targeting')
+          .reduce((acc, e) => {
+            acc[e["Product Targeting Expression"]] = e.Bid;
+            return acc;
+          }, {});
+
+        elements.looseMatch.value = targetingBids['loose-match'] || "";
+        elements.closeMatch.value = targetingBids['close-match'] || "";
+        elements.complements.value = targetingBids['complements'] || "";
+        elements.substitutes.value = targetingBids['substitutes'] || "";
+      }
+    }
+
+    if (mainCampaign.Product === "Sponsored Products") {
+      elements.asin.value = mainCampaign.asin || "";
+    } else {
+      elements.asin.value = mainCampaign["Creative asins"] || "";
+    }
   }
 
   elements.keywords.value = keywords.join("\n");
   elements.negativeKeywords.value = negativeKeywords.join("\n");
+  elements.competitorAsins.value = competitorAsins.join("\n");
 
   // Scroll to top to see the form has been populated
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -432,46 +803,159 @@ window.copyCampaignToForm = copyCampaignToForm;
 let editCallback = null;
 
 const showEditModal = (campaignId, type) => {
-  const campaign = campaignData.find((entry) => entry["Campaign Id"] === campaignId);
-  if (!campaign) return;
+  const campaignEntry = campaignData.find(
+    (c) =>
+      (c["Campaign Id"] || c["Campaign ID"]) === campaignId &&
+      c.Entity === "Campaign"
+  );
+  if (!campaignEntry) return;
 
-  let currentValue;
   let message;
   let title;
+  const isAutoCampaign =
+    campaignEntry.Product === "Sponsored Products" &&
+    campaignEntry["Targeting Type"] === "Auto";
 
-  if (type === 'budget') {
-    const campaignEntry = campaignData.find(c => c["Campaign Id"] === campaignId && c.Entity === "Campaign");
-    currentValue = campaignEntry.Budget;
+  const isPtCampaign =
+    campaignEntry.Product === "Sponsored Products" &&
+    campaignEntry["Campaign Name"].endsWith("PT");
+
+  // Hide all inputs first
+  elements.editModalInput.classList.add("hidden");
+  elements.autoBidInputs.classList.add("hidden");
+
+  if (type === "budget") {
+    const currentValue = campaignEntry.Budget || campaignEntry["Daily Budget"];
     title = "Edit Budget";
     message = `Current budget for "${campaignId}" is ${currentValue}. Enter the new budget:`;
     elements.editModalInput.step = "1";
-  } else if (type === 'bid') {
-    const keywordEntry = campaignData.find(c => c["Campaign Id"] === campaignId && c.Entity === "Keyword");
-    currentValue = keywordEntry.Bid;
+    elements.editModalInput.value = currentValue;
+    elements.editModalInput.classList.remove("hidden");
+  } else if (type === "bid") {
     title = "Edit Bid";
-    message = `Current bid for all keywords in "${campaignId}" is ${currentValue}. Enter the new bid:`;
-    elements.editModalInput.step = "0.01";
+    if (isAutoCampaign) {
+      const targetingEntries = campaignData.filter(
+        (c) =>
+          (c["Campaign Id"] || c["Campaign ID"]) === campaignId &&
+          c.Entity === "Product targeting"
+      );
+
+      const bids = {
+        "loose-match": 0,
+        "close-match": 0,
+        complements: 0,
+        substitutes: 0,
+      };
+
+      targetingEntries.forEach((entry) => {
+        bids[entry["Product Targeting Expression"]] = entry.Bid;
+      });
+
+      message = `Edit bids for "${campaignId}":`;
+      elements.editLooseMatch.value = bids["loose-match"];
+      elements.editCloseMatch.value = bids["close-match"];
+      elements.editComplements.value = bids.complements;
+      elements.editSubstitutes.value = bids.substitutes;
+      elements.autoBidInputs.classList.remove("hidden");
+    } else if (isPtCampaign) {
+      const targetingEntry = campaignData.find(
+        (c) =>
+          (c["Campaign Id"] || c["Campaign ID"]) === campaignId &&
+          c.Entity === "Product targeting"
+      );
+      const currentValue = targetingEntry ? targetingEntry.Bid : 0;
+      message = `Current bid for all targets in "${campaignId}" is ${currentValue}. Enter the new bid:`;
+      elements.editModalInput.step = "0.01";
+      elements.editModalInput.value = currentValue;
+      elements.editModalInput.classList.remove("hidden");
+    } else {
+      const keywordEntry = campaignData.find(
+        (c) =>
+          (c["Campaign Id"] || c["Campaign ID"]) === campaignId &&
+          c.Entity === "Keyword"
+      );
+      const currentValue = keywordEntry ? keywordEntry.Bid : 0;
+      message = `Current bid for all keywords in "${campaignId}" is ${currentValue}. Enter the new bid:`;
+      elements.editModalInput.step = "0.01";
+      elements.editModalInput.value = currentValue;
+      elements.editModalInput.classList.remove("hidden");
+    }
   }
 
   elements.editModalTitle.textContent = title;
   elements.editModalMessage.textContent = message;
-  elements.editModalInput.value = currentValue;
   elements.editModal.classList.remove("hidden");
   document.body.style.overflow = "hidden";
 
-  editCallback = (newValue) => {
-    if (type === 'budget') {
-      campaignData.forEach(entry => {
-        if (entry["Campaign Id"] === campaignId && entry.Entity === "Campaign") {
-          entry.Budget = newValue;
+  editCallback = () => {
+    if (type === "budget") {
+      const newValue = parseFloat(elements.editModalInput.value);
+      if (isNaN(newValue)) return;
+
+      campaignData.forEach((entry) => {
+        if (
+          (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId &&
+          entry.Entity === "Campaign"
+        ) {
+          if (entry.Product === "Sponsored Products") {
+            entry["Daily Budget"] = newValue;
+          } else {
+            entry.Budget = newValue;
+          }
         }
       });
-    } else if (type === 'bid') {
-      campaignData.forEach(entry => {
-        if (entry["Campaign Id"] === campaignId && entry.Entity === "Keyword") {
-          entry.Bid = newValue;
-        }
-      });
+    } else if (type === "bid") {
+      if (isAutoCampaign) {
+        const newBids = {
+          "loose-match": parseFloat(elements.editLooseMatch.value),
+          "close-match": parseFloat(elements.editCloseMatch.value),
+          complements: parseFloat(elements.editComplements.value),
+          substitutes: parseFloat(elements.editSubstitutes.value),
+        };
+
+        const maxBid = Math.max(...Object.values(newBids).filter(v => !isNaN(v)));
+
+        campaignData.forEach((entry) => {
+          if ((entry["Campaign Id"] || entry["Campaign ID"]) === campaignId) {
+            if (entry.Entity === "Product targeting") {
+              const targetingType = entry["Product Targeting Expression"];
+              if (newBids[targetingType] !== undefined && !isNaN(newBids[targetingType])) {
+                entry.Bid = newBids[targetingType];
+              }
+            } else if (entry.Entity === "Ad group") {
+              entry["Ad Group Default Bid"] = maxBid;
+            }
+          }
+        });
+      } else if (isPtCampaign) {
+        const newValue = parseFloat(elements.editModalInput.value);
+        if (isNaN(newValue)) return;
+
+        campaignData.forEach((entry) => {
+          if ((entry["Campaign Id"] || entry["Campaign ID"]) === campaignId) {
+            if (entry.Entity === "Product targeting") {
+              entry.Bid = newValue;
+            }
+            if (entry.Entity === "Ad group") {
+              entry["Ad Group Default Bid"] = newValue;
+            }
+          }
+        });
+      } else {
+        const newValue = parseFloat(elements.editModalInput.value);
+        if (isNaN(newValue)) return;
+
+        campaignData.forEach((entry) => {
+          if ((entry["Campaign Id"] || entry["Campaign ID"]) === campaignId) {
+            if (entry.Entity === "Keyword") {
+              entry.Bid = newValue;
+            }
+            if (entry.Product === "Sponsored Products" && entry.Entity === "Ad group") {
+              entry["Ad Group Default Bid"] = newValue;
+            }
+          }
+        });
+      }
     }
     hideEditModal();
     showSuccess(`Successfully updated ${type} for "${campaignId}"!`);
@@ -486,9 +970,8 @@ const hideEditModal = () => {
 };
 
 const saveEditAndHide = () => {
-  const newValue = parseFloat(elements.editModalInput.value);
-  if (editCallback && !isNaN(newValue)) {
-    editCallback(newValue);
+  if (editCallback) {
+    editCallback();
   }
 };
 
@@ -518,7 +1001,7 @@ const initializeSortableList = () => {
         const reorderedCampaignData = [];
         orderedCampaignIds.forEach((id) => {
           const campaignEntries = campaignData.filter(
-            (entry) => entry["Campaign Id"] === id
+            (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) === id
           );
           reorderedCampaignData.push(...campaignEntries);
         });
@@ -529,6 +1012,79 @@ const initializeSortableList = () => {
   }
 };
 
+// Preview Modal Functions
+const showPreviewModal = (type) => {
+  const data = campaignData.filter((entry) => entry.Product === type);
+  const columns = type === "Sponsored Products" ? sponsoredProductsColumns : sponsoredBrandsColumns;
+  
+  elements.previewModalTitle.textContent = `${type} Preview`;
+  renderTable(elements.previewModalTable, data, columns);
+  elements.previewModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+};
+
+const hidePreviewModal = () => {
+  elements.previewModal.classList.add("hidden");
+  document.body.style.overflow = "unset";
+};
+
+const renderTable = (table, data, columns) => {
+  const thead = table.querySelector("thead");
+  const tbody = table.querySelector("tbody");
+
+  // Clear existing table
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
+
+  // Create header
+  const headerRow = document.createElement("tr");
+  columns.forEach((col) => {
+    const th = document.createElement("th");
+    th.textContent = col;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+
+  // Create body
+  if (data.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = columns.length;
+    td.textContent = "No data available";
+    td.style.textAlign = "center";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  } else {
+    data.forEach((row) => {
+      const tr = document.createElement("tr");
+      columns.forEach((col) => {
+        const td = document.createElement("td");
+        td.textContent = (row[col] === null || row[col] === undefined) ? "" : row[col];
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Set sticky column offsets
+  requestAnimationFrame(() => {
+    const ths = headerRow.querySelectorAll('th');
+    let offset = 0;
+    for (let i = 0; i < 4; i++) {
+      if (ths[i]) {
+        ths[i].style.left = `${offset}px`;
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+          if (row.cells[i]) {
+            row.cells[i].style.left = `${offset}px`;
+          }
+        });
+        offset += ths[i].offsetWidth;
+      }
+    }
+  });
+};
+
 // Excel Functions
 const downloadExcel = async () => {
   try {
@@ -537,18 +1093,38 @@ const downloadExcel = async () => {
       "https://cdn.sheetjs.com/xlsx-0.20.2/package/xlsx.mjs"
     );
 
-    const output =
-      campaignData.length > 0
-        ? campaignData.map((entry) => ensureDefaultColumns(entry))
-        : [ensureDefaultColumns({})];
+    // Sponsored Brands Sheet
+    const sbData = campaignData.filter(entry => entry.Product === "Sponsored Brands");
+    const sbOutput =
+      sbData.length > 0
+        ? sbData.map((entry) => ensureDefaultColumns(entry, "sb"))
+        : [ensureDefaultColumns({}, "sb")];
+    const sbWorksheet = XLSX.utils.json_to_sheet(sbOutput, {
+      header: sponsoredBrandsColumns,
+    });
 
-    const worksheet = XLSX.utils.json_to_sheet(output, {
-      header: defaultColumns,
+    // Sponsored Products Sheet
+    const spData = campaignData.filter(entry => entry.Product === "Sponsored Products");
+    const spOutput =
+      spData.length > 0
+        ? spData.map((entry) => ensureDefaultColumns(entry, "sp"))
+        : [ensureDefaultColumns({}, "sp")];
+    const spWorksheet = XLSX.utils.json_to_sheet(spOutput, {
+      header: sponsoredProductsColumns,
     });
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Campaign");
-    XLSX.writeFile(workbook, "Video_Campaign_Upload_Template.xlsx");
+    XLSX.utils.book_append_sheet(
+      workbook,
+      spWorksheet,
+      "Sponsored Products Campaigns"
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      sbWorksheet,
+      "Sponsored Brands Campaigns"
+    );
+    XLSX.writeFile(workbook, "AmazonAdvertisingBulksheetSellerTemplate.xlsx");
   } catch (error) {
     console.error("Error downloading Excel file:", error);
     showError("Failed to download Excel file. Please try again.");
@@ -664,6 +1240,9 @@ const initializeEventListeners = () => {
   elements.videoHelpBtn.addEventListener("click", showModal);
   elements.themeToggle.addEventListener("click", toggleTheme);
 
+  // Form events
+  elements.campaignType.addEventListener("change", updateFormUI);
+
   // Alert events
   elements.closeError.addEventListener("click", hideError);
 
@@ -677,6 +1256,15 @@ const initializeEventListeners = () => {
   elements.cancelEdit.addEventListener("click", hideEditModal);
   elements.saveEdit.addEventListener("click", saveEditAndHide);
 
+  // Preview modal events
+  elements.showSpPreview.addEventListener("click", () =>
+    showPreviewModal("Sponsored Products")
+  );
+  elements.showSbPreview.addEventListener("click", () =>
+    showPreviewModal("Sponsored Brands")
+  );
+  elements.closePreviewModal.addEventListener("click", hidePreviewModal);
+
   // Close modal when clicking outside
   elements.videoModal.addEventListener("click", (e) => {
     if (e.target === elements.videoModal) {
@@ -686,9 +1274,12 @@ const initializeEventListeners = () => {
 
   // Keyboard shortcuts
   document.addEventListener("keydown", (e) => {
-    // ESC to close modal
+    // ESC to close modals
     if (e.key === "Escape") {
       hideModal();
+      hidePreviewModal();
+      hideConfirmation();
+      hideEditModal();
     }
 
     // Ctrl+Enter to add to template
@@ -717,4 +1308,5 @@ document.addEventListener("DOMContentLoaded", () => {
   updateCampaignList();
   initializeSortableList();
   applyInitialTheme();
+  updateFormUI();
 });
