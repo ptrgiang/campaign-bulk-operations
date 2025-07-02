@@ -196,7 +196,7 @@ const getBrandEntityId = (country) => {
 };
 
 const campaignNameMap = {
-  auto: "Product Number SKU Auto",
+  auto: "Product Number SKU - Auto",
   sp: "Product Number SKU SP",
   research: "Product Number SKU - Research",
   performance: "Product Number SKU - Performance",
