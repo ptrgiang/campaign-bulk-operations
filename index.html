@@ -115,6 +115,7 @@
                     Campaign Type
                   </label>
                   <select id="campaignType" class="form-control">
+                    <option value="custom">Custom</option>
                     <option value="auto">Auto</option>
                     <option value="sp" disabled>SP</option>
                     <option value="research">Research</option>
@@ -396,6 +397,48 @@
                   ></textarea>
                 </div>
 
+                <div class="form-group hidden" id="customKeywordsSection">
+                  <label>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    Targeting Keywords
+                    <span class="required">*</span>
+                  </label>
+                  <p class="field-hint">One keyword per line</p>
+                  <div
+                    class="form-grid-2"
+                    style="grid-template-columns: 1fr 1fr; gap: 1rem"
+                  >
+                    <textarea
+                      id="exactKeywords"
+                      class="form-control"
+                      rows="6"
+                      placeholder="Targeting Exact..."
+                    ></textarea>
+                    <textarea
+                      id="phraseKeywords"
+                      class="form-control"
+                      rows="6"
+                      placeholder="Targeting Phrase..."
+                    ></textarea>
+                    <textarea
+                      id="broadKeywords"
+                      class="form-control"
+                      rows="6"
+                      placeholder="Targeting Broad..."
+                    ></textarea>
+                  </div>
+                </div>
+
                 <div class="form-group" id="negativeKeywordsSection">
                   <label for="negativeKeywords">
                     <svg
@@ -523,54 +566,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Competitor ASINs Section -->
-            <div class="section hidden" id="ptTargetingSection">
-              <div class="section-header">
-                <div class="section-icon emerald">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <circle cx="12" cy="12" r="6"></circle>
-                    <circle cx="12" cy="12" r="2"></circle>
-                  </svg>
-                </div>
-                <h2>Competitor Targeting</h2>
-              </div>
-              <div class="form-group">
-                <label for="competitorAsins">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="M21 21l-4.35-4.35"></path>
-                  </svg>
-                  Competitor ASINs
-                  <span class="required">*</span>
-                </label>
-                <p class="field-hint">One ASIN per line</p>
-                <textarea
-                  id="competitorAsins"
-                  class="form-control"
-                  rows="6"
-                  placeholder="Enter competitor ASINs, one per line..."
-                  required
-                ></textarea>
-              </div>
-            </div>
-
-            
 
             <!-- Competitor ASINs Section -->
             <div class="section hidden" id="ptTargetingSection">
@@ -929,7 +924,9 @@
         </div>
         <div class="modal-content">
           <p id="editModalMessage"></p>
+          <div id="editModalError" class="alert alert-error hidden" style="margin-bottom: 1rem;"></div>
           <input type="number" id="editModalInput" class="form-control" step="0.01" />
+          <input type="text" id="editModalTextInput" class="form-control hidden" />
           <div id="autoBidInputs" class="hidden">
             <div class="form-grid-4">
               <div class="form-group">
@@ -947,6 +944,22 @@
               <div class="form-group">
                 <label for="editSubstitutes">Substitutes</label>
                 <input type="number" id="editSubstitutes" class="form-control" step="0.01" />
+              </div>
+            </div>
+          </div>
+          <div id="biddingAdjustmentInputs" class="hidden">
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="editPlacementTop">Top of search (first page)</label>
+                <input type="number" id="editPlacementTop" class="form-control" min="0" max="900" step="1" />
+              </div>
+              <div class="form-group">
+                <label for="editPlacementRest">Rest of search</label>
+                <input type="number" id="editPlacementRest" class="form-control" min="0" max="900" step="1" />
+              </div>
+              <div class="form-group">
+                <label for="editPlacementProduct">Product pages</label>
+                <input type="number" id="editPlacementProduct" class="form-control" min="0" max="900" step="1" />
               </div>
             </div>
           </div>
