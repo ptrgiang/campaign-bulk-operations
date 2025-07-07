@@ -148,6 +148,12 @@ body {
   gap: 1.5rem;
 }
 
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
 .form-grid-4 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -660,13 +666,13 @@ textarea.form-control {
   z-index: 20;
 }
 
-.preview-table-container td:nth-child(-n+4) {
+.preview-table-container td:nth-child(-n+5) {
   position: sticky;
   background: #f9fafb;
   z-index: 15;
 }
 
-.preview-table-container th:nth-child(-n+4) {
+.preview-table-container th:nth-child(-n+5) {
   position: sticky;
   z-index: 25;
 }

@@ -38,6 +38,11 @@
           <h1>BlueStars Campaign Creator</h1>
           <div class="sparkle">✨</div>
         </div>
+        <a href="https://github.com/ptrgiang/campaign-bulk-operations" target="_blank" id="guideBtn" class="theme-toggle" style="margin-right: 4rem;" title="View on GitHub">
+          <svg id="guideIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+          </svg>
+        </a>
         <button type="button" id="themeToggle" class="theme-toggle">
           <svg id="themeIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -117,7 +122,7 @@
                   <select id="campaignType" class="form-control">
                     <option value="custom">Custom</option>
                     <option value="auto">Auto</option>
-                    <option value="sp" disabled>SP</option>
+                    <option value="sp">SP</option>
                     <option value="research">Research</option>
                     <option value="performance">Performance</option>
                     <option value="pt">PT</option>
@@ -296,6 +301,30 @@
                   />
                 </div>
 
+                <div class="form-group hidden" id="productNameSection">
+                  <label for="productName">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                      <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                    </svg>
+                    Product Name
+                    <span class="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="productName"
+                    class="form-control"
+                    placeholder="Enter product name"
+                  />
+                </div>
+
                 <div class="form-group" id="videoIdSection">
                   <label for="videoId">
                     <svg
@@ -370,8 +399,8 @@
                 <h2>Keywords</h2>
               </div>
 
-              <div class="form-grid-2">
-                <div class="form-group">
+              <div class="form-grid-2" id="keywordsGrid">
+                <div class="form-group" id="targetingKeywordsSection">
                   <label for="keywords">
                     <svg
                       width="16"
@@ -498,6 +527,81 @@
                       rows="6"
                       placeholder="Negative Phrase..."
                     ></textarea>
+                  </div>
+                </div>
+                <div class="form-group hidden" id="spKeywordsSection">
+                  <div class="form-grid-3">
+                    <div class="form-group">
+                      <label for="lv1Keywords">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                        LV1 Keywords
+                        <span class="required">*</span>
+                      </label>
+                      <p class="field-hint">One keyword per line</p>
+                      <textarea
+                        id="lv1Keywords"
+                        class="form-control"
+                        rows="6"
+                        placeholder="Enter LV1 keywords..."
+                      ></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label for="lv2Keywords">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                        LV2 Keywords
+                        <span class="required">*</span>
+                      </label>
+                      <p class="field-hint">One keyword per line</p>
+                      <textarea
+                        id="lv2Keywords"
+                        class="form-control"
+                        rows="6"
+                        placeholder="Enter LV2 keywords..."
+                      ></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label for="spNegativeKeywords">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Negative Keywords
+                      </label>
+                      <p class="field-hint">One keyword per line</p>
+                      <textarea
+                        id="spNegativeKeywords"
+                        class="form-control"
+                        rows="6"
+                        placeholder="Enter negative keywords..."
+                      ></textarea>
+                    </div>
                   </div>
                 </div>
               </div>
