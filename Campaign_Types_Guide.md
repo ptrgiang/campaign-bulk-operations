@@ -155,17 +155,17 @@ These campaigns are created under the "Sponsored Brands" product type and are al
 Once a campaign is added to the template, you can customize it using the action icons that appear on hover. These features allow you to fine-tune your campaigns before downloading the Excel file.
 
 ### Editing Campaign Name
-- **Icon:** Pencil
+- **Icon:** 📝
 - **Functionality:** Allows you to rename the entire campaign. This updates the `Campaign Name` and `Campaign ID` for all rows associated with that campaign in the template.
 - **Use Case:** Correcting typos or applying a different naming convention.
 
 ### Editing Budget
-- **Icon:** Wallet/Budget
+- **Icon:** 💳
 - **Functionality:** Changes the `Daily Budget` (for Sponsored Products) or `Budget` (for Sponsored Brands) for the selected campaign.
 - **Use Case:** Adjusting the daily spend for a specific campaign based on performance goals.
 
 ### Editing Bid
-- **Icon:** Dollar Sign
+- **Icon:** 💲
 - **Functionality:** This feature's behavior depends on the campaign type:
   - **For most campaigns (Custom, Research, Performance, Video):** It updates the `Bid` for all keywords in that campaign simultaneously.
   - **For Auto campaigns:** It opens a modal where you can edit the bids for each targeting group (`Loose match`, `Close match`, `Complements`, `Substitutes`) individually.
@@ -173,16 +173,16 @@ Once a campaign is added to the template, you can customize it using the action 
 - **Use Case:** Increasing or decreasing bids across a campaign to manage ACoS and impression volume.
 
 ### Editing Bidding Adjustment
-- **Icon:** Sliders/Adjust
+- **Icon:** %
 - **Functionality:** Opens a modal to edit the percentage for bidding adjustments for different placements: `Top of search (first page)`, `Rest of search`, and `Product pages`. The values can range from 0% to 900%.
 - **Use Case:** Applying strategic bid increases for placements that have historically performed well.
 
 ### Copying a Campaign
-- **Icon:** Copy
+- **Icon:** 📂
 - **Functionality:** Copies the entire configuration of an existing campaign from the template back into the main form. 
 - **Use Case:** Quickly creating a new, similar campaign without having to re-enter all the details. You can then modify the copied details and add it as a new campaign.
 
 ### Deleting a Campaign
-- **Icon:** Cross (X)
+- **Icon:** ❌
 - **Functionality:** Removes the selected campaign and all of its associated rows from the template.
 - **Use Case:** Removing campaigns that were added by mistake or are no longer needed.
