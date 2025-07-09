@@ -141,6 +141,10 @@ const elements = {
   editPlacementRest: document.getElementById("editPlacementRest"),
   editPlacementProduct: document.getElementById("editPlacementProduct"),
 
+  // SP Bid Inputs
+  spBidInputs: document.getElementById("spBidInputs"),
+  spAdGroupInputs: document.getElementById("spAdGroupInputs"),
+
   // Preview
   showSbPreview: document.getElementById("showSbPreview"),
   showSpPreview: document.getElementById("showSpPreview"),
@@ -290,6 +294,13 @@ const validateRequiredFields = () => {
 
   if (campaignType === "sp" && !productName) {
     return { isValid: false, message: "Product Name is required for SP campaigns" };
+  }
+
+  if (campaignType === "sp" && productNumber === productName) {
+    return {
+      isValid: false,
+      message: "Product Number and Product Name must be different for SP campaigns",
+    };
   }
 
   if (!sku) {
@@ -721,6 +732,7 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSbNegativeKeyword(campaignId, keyword, "negativePhrase"));
     });
   } else if (campaignType === "sp") {
+    const spLevel = document.querySelector('input[name="spLevel"]:checked').value;
     const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
     spCampaign.asin = asin;
     newCampaignData.push(spCampaign);
@@ -733,77 +745,102 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSpCampaignNegativeKeyword(campaignId, keyword, "negativePhrase"));
     });
 
-    const lv1Classified = lv1Keywords.map(kw => {
-      const wordCount = kw.split(/\s+/).length;
-      const phraseCount = getKeywordPhraseCount(kw, lv1Keywords);
-      if (wordCount === 1) return { keyword: kw, class: "LV1 - GNR" };
-      if (wordCount === 2 || (wordCount >= 3 && phraseCount >= 2)) return { keyword: kw, class: "LV1 - GNR2" };
-      return { keyword: kw, class: "LV1 - SPF" };
-    });
+    if (spLevel === 'lv1-lv2') { //lv1/lv2
+      // LV1 Ad Group (based on productNumber)
+      const lv1AdGroup = `${productNumber} - LV1`;
+      newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv1AdGroup, lv1AdGroup, 0.5));
+      newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv1AdGroup, sku));
 
-    const lv2Classified = lv2Keywords.map(kw => {
-      const wordCount = kw.split(/\s+/).length;
-      const phraseCount = getKeywordPhraseCount(kw, lv2Keywords);
-      if (wordCount === 3 || phraseCount > 10) return { keyword: kw, class: "LV2 - GNR" };
-      if (phraseCount >= 2 && phraseCount <= 10) return { keyword: kw, class: "LV2 - GNR2" };
-      return { keyword: kw, class: "LV2 - SPF" };
-    });
+      lv1Keywords.forEach(({ keyword }) => {
+          newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv1AdGroup, keyword, "phrase", 0.5));
+      });
 
-    // LV1 Ad Groups
-    const lv1GnrAdGroup = `${productNumber} - GNR`;
-    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv1GnrAdGroup, lv1GnrAdGroup, 0.5));
-    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv1GnrAdGroup, sku));
-    lv1Classified.filter(item => item.class === "LV1 - GNR").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv1GnrAdGroup, item.keyword, "phrase", 0.5));
-    });
-    lv1Classified.filter(item => item.class !== "LV1 - GNR").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, lv1GnrAdGroup, item.keyword, "negativePhrase"));
-    });
+      // LV2 Ad Group (based on productName)
+      if (lv2Keywords.length > 0) {
+        const lv2AdGroup = `${productName} - LV2`;
+        newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv2AdGroup, lv2AdGroup, 0.5));
+        newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv2AdGroup, sku));
 
-    const lv1Gnr2AdGroup = `${productNumber} - GNR2`;
-    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv1Gnr2AdGroup, lv1Gnr2AdGroup, 0.5));
-    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv1Gnr2AdGroup, sku));
-    lv1Classified.filter(item => item.class === "LV1 - GNR2").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv1Gnr2AdGroup, item.keyword, "phrase", 0.5));
-    });
-    lv1Classified.filter(item => item.class === "LV1 - SPF").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, lv1Gnr2AdGroup, item.keyword, "negativePhrase"));
-    });
+        lv2Keywords.forEach(keyword => {
+            newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv2AdGroup, keyword, "phrase", 0.5));
+        });
+      }
+    
+    } else { // gnr/gnr2/spf
+      const lv1Classified = lv1Keywords.map(kw => {
+        const wordCount = kw.split(/\s+/).length;
+        const phraseCount = getKeywordPhraseCount(kw, lv1Keywords);
+        if (wordCount === 1) return { keyword: kw, class: "LV1 - GNR" };
+        if (wordCount === 2 || (wordCount >= 3 && phraseCount >= 2)) return { keyword: kw, class: "LV1 - GNR2" };
+        return { keyword: kw, class: "LV1 - SPF" };
+      });
 
-    const lv1SpfAdGroup = `${productNumber} - SPF`;
-    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv1SpfAdGroup, lv1SpfAdGroup, 0.5));
-    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv1SpfAdGroup, sku));
-    lv1Classified.filter(item => item.class === "LV1 - SPF").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv1SpfAdGroup, item.keyword, "phrase", 0.5));
-    });
+      const lv2Classified = lv2Keywords.map(kw => {
+        const wordCount = kw.split(/\s+/).length;
+        const phraseCount = getKeywordPhraseCount(kw, lv2Keywords);
+        if (wordCount === 3 || phraseCount > 10) return { keyword: kw, class: "LV2 - GNR" };
+        if (phraseCount >= 2 && phraseCount <= 10) return { keyword: kw, class: "LV2 - GNR2" };
+        return { keyword: kw, class: "LV2 - SPF" };
+      });
 
-    // LV2 Ad Groups
-    const lv2GnrAdGroup = `${productName} - GNR`;
-    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv2GnrAdGroup, lv2GnrAdGroup, 0.5));
-    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv2GnrAdGroup, sku));
-    lv2Classified.filter(item => item.class === "LV2 - GNR").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv2GnrAdGroup, item.keyword, "phrase", 0.5));
-    });
-    lv2Classified.filter(item => item.class !== "LV2 - GNR").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, lv2GnrAdGroup, item.keyword, "negativePhrase"));
-    });
+      // LV1 Ad Groups
+      const lv1GnrAdGroup = `${productNumber} - GNR`;
+      newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv1GnrAdGroup, lv1GnrAdGroup, 0.5));
+      newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv1GnrAdGroup, sku));
+      lv1Classified.filter(item => item.class === "LV1 - GNR").forEach(item => {
+        newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv1GnrAdGroup, item.keyword, "phrase", 0.5));
+      });
+      lv1Classified.filter(item => item.class !== "LV1 - GNR").forEach(item => {
+        newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, lv1GnrAdGroup, item.keyword, "negativePhrase"));
+      });
 
-    const lv2Gnr2AdGroup = `${productName} - GNR2`;
-    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv2Gnr2AdGroup, lv2Gnr2AdGroup, 0.5));
-    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv2Gnr2AdGroup, sku));
-    lv2Classified.filter(item => item.class === "LV2 - GNR2").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv2Gnr2AdGroup, item.keyword, "phrase", 0.5));
-    });
-    lv2Classified.filter(item => item.class === "LV2 - SPF").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, lv2Gnr2AdGroup, item.keyword, "negativePhrase"));
-    });
+      const lv1Gnr2AdGroup = `${productNumber} - GNR2`;
+      newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv1Gnr2AdGroup, lv1Gnr2AdGroup, 0.5));
+      newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv1Gnr2AdGroup, sku));
+      lv1Classified.filter(item => item.class === "LV1 - GNR2").forEach(item => {
+        newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv1Gnr2AdGroup, item.keyword, "phrase", 0.5));
+      });
+      lv1Classified.filter(item => item.class === "LV1 - SPF").forEach(item => {
+        newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, lv1Gnr2AdGroup, item.keyword, "negativePhrase"));
+      });
 
-    const lv2SpfAdGroup = `${productName} - SPF`;
-    newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv2SpfAdGroup, lv2SpfAdGroup, 0.5));
-    newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv2SpfAdGroup, sku));
-    lv2Classified.filter(item => item.class === "LV2 - SPF").forEach(item => {
-      newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv2SpfAdGroup, item.keyword, "phrase", 0.5));
-    });
+      const lv1SpfAdGroup = `${productNumber} - SPF`;
+      newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv1SpfAdGroup, lv1SpfAdGroup, 0.5));
+      newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv1SpfAdGroup, sku));
+      lv1Classified.filter(item => item.class === "LV1 - SPF").forEach(item => {
+        newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv1SpfAdGroup, item.keyword, "phrase", 0.5));
+      });
+
+      // LV2 Ad Groups
+      if (lv2Keywords.length > 0) {
+        const lv2GnrAdGroup = `${productName} - GNR`;
+        newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv2GnrAdGroup, lv2GnrAdGroup, 0.5));
+        newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv2GnrAdGroup, sku));
+        lv2Classified.filter(item => item.class === "LV2 - GNR").forEach(item => {
+          newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv2GnrAdGroup, item.keyword, "phrase", 0.5));
+        });
+        lv2Classified.filter(item => item.class !== "LV2 - GNR").forEach(item => {
+          newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, lv2GnrAdGroup, item.keyword, "negativePhrase"));
+        });
+
+        const lv2Gnr2AdGroup = `${productName} - GNR2`;
+        newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv2Gnr2AdGroup, lv2Gnr2AdGroup, 0.5));
+        newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv2Gnr2AdGroup, sku));
+        lv2Classified.filter(item => item.class === "LV2 - GNR2").forEach(item => {
+          newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv2Gnr2AdGroup, item.keyword, "phrase", 0.5));
+        });
+        lv2Classified.filter(item => item.class === "LV2 - SPF").forEach(item => {
+          newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, lv2Gnr2AdGroup, item.keyword, "negativePhrase"));
+        });
+
+        const lv2SpfAdGroup = `${productName} - SPF`;
+        newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv2SpfAdGroup, lv2SpfAdGroup, 0.5));
+        newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv2SpfAdGroup, sku));
+        lv2Classified.filter(item => item.class === "LV2 - SPF").forEach(item => {
+          newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv2SpfAdGroup, item.keyword, "phrase", 0.5));
+        });
+      }
+    }
   }
 
   // Insert new campaign data at the correct position
@@ -851,7 +888,11 @@ const updateCampaignList = () => {
       const campaign = campaignData.find(
         (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId
       );
-      const isAutoCampaign = campaign.Product === "Sponsored Products";
+      const hasAdGroup = campaignData.some(
+        (entry) =>
+          (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId &&
+          entry.Entity === "Ad group"
+      );
 
       return `
         <div class="campaign-item" data-campaign-id="${campaignId}">
@@ -877,6 +918,16 @@ const updateCampaignList = () => {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
               </button>
+              ${hasAdGroup ? `
+              <button type="button" class="campaign-edit" title="Edit Ad Group Name" onclick="showEditModal('${campaignId}', 'adGroup')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </button>
+              ` : ''}
               <button type="button" class="campaign-edit" title="Edit Budget" onclick="showEditModal('${campaignId}', 'budget')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
@@ -1022,11 +1073,21 @@ const showEditModal = (campaignId, type) => {
     campaignEntry.Product === "Sponsored Products" &&
     campaignEntry["Campaign Name"].endsWith("PT");
 
+  const hasAdGroup = campaignData.some(
+    (entry) =>
+      (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId &&
+      entry.Entity === "Ad group"
+  );
+
   // Hide all inputs first
   elements.editModalInput.classList.add("hidden");
   elements.autoBidInputs.classList.add("hidden");
   elements.editModalTextInput.classList.add("hidden");
   elements.biddingAdjustmentInputs.classList.add("hidden");
+  elements.spBidInputs.classList.add("hidden");
+  elements.spBidInputs.innerHTML = "";
+  elements.spAdGroupInputs.classList.add("hidden");
+  elements.spAdGroupInputs.innerHTML = "";
 
   if (type === "name") {
     title = "Edit Campaign Name";
@@ -1077,6 +1138,43 @@ const showEditModal = (campaignId, type) => {
       elements.editModalInput.step = "0.01";
       elements.editModalInput.value = currentValue;
       elements.editModalInput.classList.remove("hidden");
+    } else if (hasAdGroup) {
+      const adGroupEntries = campaignData.filter(
+        (c) =>
+          (c["Campaign Id"] || c["Campaign ID"]) === campaignId &&
+          c.Entity === "Ad group"
+      );
+
+      message = `Edit bids for ad groups in "${campaignId}":`;
+      elements.spBidInputs.classList.remove("hidden");
+      const adGroupBidsGrid = document.createElement('div');
+      adGroupBidsGrid.className = 'form-grid-2';
+
+      adGroupEntries.forEach(adGroup => {
+        const adGroupId = adGroup["Ad Group ID"];
+        const adGroupName = adGroup["Ad Group Name"];
+        const currentBid = adGroup["Ad Group Default Bid"];
+        
+        const formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.for = `edit-bid-${adGroupId}`;
+        label.textContent = adGroupName;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `edit-bid-${adGroupId}`;
+        input.className = 'form-control';
+        input.step = '0.01';
+        input.value = currentBid;
+        input.dataset.adGroupId = adGroupId;
+
+        formGroup.appendChild(label);
+        formGroup.appendChild(input);
+        adGroupBidsGrid.appendChild(formGroup);
+      });
+      elements.spBidInputs.appendChild(adGroupBidsGrid);
     } else {
       const keywordEntry = campaignData.find(
         (c) =>
@@ -1113,6 +1211,43 @@ const showEditModal = (campaignId, type) => {
     elements.editPlacementRest.value = adjustments["placement rest of search"];
     elements.editPlacementProduct.value = adjustments["placement product page"];
     elements.biddingAdjustmentInputs.classList.remove("hidden");
+  } else if (type === "adGroup") {
+    title = "Edit Ad Group Names";
+    message = `Edit ad group names for "${campaignId}":`;
+    elements.spAdGroupInputs.classList.remove("hidden");
+    const adGroupGrid = document.createElement('div');
+    adGroupGrid.className = 'form-grid-2';
+
+    const adGroupEntries = campaignData.filter(
+      (c) =>
+        (c["Campaign Id"] || c["Campaign ID"]) === campaignId &&
+        c.Entity === "Ad group"
+    );
+
+    adGroupEntries.forEach(adGroup => {
+      const adGroupId = adGroup["Ad Group ID"];
+      const adGroupName = adGroup["Ad Group Name"];
+      
+      const formGroup = document.createElement('div');
+      formGroup.className = 'form-group';
+      
+      const label = document.createElement('label');
+      label.for = `edit-adgroup-${adGroupId}`;
+      label.textContent = `Current: ${adGroupName}`;
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.id = `edit-adgroup-${adGroupId}`;
+      input.className = 'form-control';
+      input.value = adGroupName;
+      input.dataset.adGroupId = adGroupId;
+      input.dataset.originalName = adGroupName;
+
+      formGroup.appendChild(label);
+      formGroup.appendChild(input);
+      adGroupGrid.appendChild(formGroup);
+    });
+    elements.spAdGroupInputs.appendChild(adGroupGrid);
   }
 
   elements.editModalTitle.textContent = title;
@@ -1215,6 +1350,27 @@ const showEditModal = (campaignId, type) => {
             }
           }
         });
+      } else if (hasAdGroup) {
+        const bidInputs = elements.spBidInputs.querySelectorAll('input[type="number"]');
+        bidInputs.forEach(input => {
+          const adGroupId = input.dataset.adGroupId;
+          const newBid = parseFloat(input.value);
+          if (!isNaN(newBid)) {
+            campaignData.forEach(entry => {
+              if (
+                (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId &&
+                entry["Ad Group ID"] === adGroupId
+              ) {
+                if (entry.Entity === "Ad group") {
+                  entry["Ad Group Default Bid"] = newBid;
+                }
+                if (entry.Entity === "Keyword") {
+                  entry.Bid = newBid;
+                }
+              }
+            });
+          }
+        });
       } else {
         const newValue = parseFloat(elements.editModalInput.value);
         if (isNaN(newValue)) return;
@@ -1257,6 +1413,54 @@ const showEditModal = (campaignId, type) => {
           }
         }
       });
+    } else if (type === "adGroup") {
+      const adGroupInputs = elements.spAdGroupInputs.querySelectorAll('input[type="text"]');
+
+      const proposedChanges = new Map();
+      adGroupInputs.forEach(input => {
+        const originalId = input.dataset.adGroupId;
+        const newName = input.value.trim();
+        proposedChanges.set(originalId, newName);
+      });
+
+      const currentAdGroups = campaignData.filter(e =>
+        (e['Campaign Id'] || e['Campaign ID']) === campaignId && e.Entity === 'Ad group'
+      );
+
+      const finalNames = currentAdGroups.map(adGroup => {
+        const originalId = adGroup['Ad Group ID'];
+        return proposedChanges.get(originalId) || originalId;
+      });
+
+      if (new Set(finalNames).size !== finalNames.length) {
+        elements.editModalError.textContent = "Duplicate Ad Group names are not allowed within the same campaign.";
+        elements.editModalError.classList.remove("hidden");
+        return;
+      }
+
+      const updatedCampaignEntries = campaignData
+        .filter(e => (e['Campaign Id'] || e['Campaign ID']) === campaignId)
+        .map(entry => {
+            const originalAdGroupId = entry['Ad Group ID'];
+            if (proposedChanges.has(originalAdGroupId)) {
+                const newAdGroupName = proposedChanges.get(originalAdGroupId);
+                if (newAdGroupName && newAdGroupName !== originalAdGroupId) {
+                    const newEntry = { ...entry };
+                    newEntry['Ad Group ID'] = newAdGroupName;
+                    if (newEntry.Entity === 'Ad group') {
+                        newEntry['Ad Group Name'] = newAdGroupName;
+                    }
+                    return newEntry;
+                }
+            }
+            return entry;
+        });
+
+      const firstIndex = campaignData.findIndex(e => (e['Campaign Id'] || e['Campaign ID']) === campaignId);
+      if (firstIndex !== -1) {
+        const campaignLength = campaignData.filter(e => (e['Campaign Id'] || e['Campaign ID']) === campaignId).length;
+        campaignData.splice(firstIndex, campaignLength, ...updatedCampaignEntries);
+      }
     }
     hideEditModal();
     showSuccess(`Successfully updated ${type} for "${campaignId}"!`);

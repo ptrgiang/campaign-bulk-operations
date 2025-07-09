@@ -103,23 +103,40 @@ These campaigns are created under the "Sponsored Products" product type in the E
 
 ### SP (Advanced)
 
-- **Purpose:** Creates a highly structured campaign with multiple ad groups based on a sophisticated keyword classification system (LV1/LV2, GNR/GNR2/SPF). This is for advanced users.
+- **Purpose:** Creates a highly structured campaign with multiple ad groups. This is for advanced users and operates in two modes, selectable in the UI: **LV1/LV2** and **GNR/GNR2/SPF**.
 - **Required Fields:**
   - `Product Number`, `SKU`, `ASIN`
   - `Product Name` (Used for LV2 ad group naming)
   - `LV1 Keywords`
   - `LV2 Keywords`
   - `Negative Keywords`
-- **Generated Template Rows:**
+- **Generated Template Rows (Common):**
   - **1 x Campaign:** Targeting Type is `Manual`.
   - **3 x Bidding adjustment:** `placement top` is set to `50%`.
   - **Campaign Negative Keywords:** All keywords from the `Negative Keywords` field are added at the campaign level as `negativePhrase`.
-  - **6 x Ad Groups & Product Ads:** Creates six ad groups, each with its own product ad.
-    - LV1 Ad Groups: `${productNumber} - GNR`, `${productNumber} - GNR2`, `${productNumber} - SPF`
-    - LV2 Ad Groups: `${productName} - GNR`, `${productName} - GNR2`, `${productName} - SPF`
-  - **Keyword Distribution:**
-    - LV1 and LV2 keywords are automatically classified based on word count and frequency, then placed in the appropriate ad group as `phrase` match keywords with a bid of `0.50`.
-    - Negative keywords are automatically added to the ad groups to prevent overlap (e.g., GNR2 and SPF keywords are added as negatives to the GNR ad group).
+
+---
+
+#### Mode 1: LV1/LV2
+
+- **Structure:** Creates a simpler two-tiered ad group structure.
+- **Generated Ad Groups:**
+  - **1 x LV1 Ad Group:** Named `${productNumber} - LV1`. Contains all `LV1 Keywords`.
+  - **1 x LV2 Ad Group:** (Optional) Named `${productName} - LV2`. Created if `LV2 Keywords` are provided and contains all of them.
+- **Keyword Match Type:** All keywords are added as `phrase` match with a bid of `0.50`.
+
+---
+
+#### Mode 2: GNR/GNR2/SPF
+
+- **Structure:** Creates a highly granular structure based on a sophisticated keyword classification system.
+- **Generated Ad Groups:**
+  - **Up to 6 x Ad Groups & Product Ads:** Creates up to six ad groups, each with its own product ad.
+    - **LV1 Ad Groups:** `${productNumber} - GNR`, `${productNumber} - GNR2`, `${productNumber} - SPF`
+    - **LV2 Ad Groups:** `${productName} - GNR`, `${productName} - GNR2`, `${productName} - SPF`
+- **Keyword Distribution:**
+  - LV1 and LV2 keywords are automatically classified based on word count and frequency, then placed in the appropriate ad group as `phrase` match keywords with a bid of `0.50`.
+  - Negative keywords are automatically added to the ad groups to prevent overlap (e.g., GNR2 and SPF keywords are added as negatives to the GNR ad group).
 
 ---
 
@@ -158,6 +175,11 @@ Once a campaign is added to the template, you can customize it using the action 
 - **Icon:** 📝
 - **Functionality:** Allows you to rename the entire campaign. This updates the `Campaign Name` and `Campaign ID` for all rows associated with that campaign in the template.
 - **Use Case:** Correcting typos or applying a different naming convention.
+
+### Editing Ad Group Name
+- **Icon:** 👥
+- **Functionality:** Opens a modal to edit the names of all ad groups within a selected campaign. This is particularly useful for renaming the default ad group names (e.g., `Product Number - GNR`, `Product Name - LV2`) to something more specific.
+- **Use Case:** Customizing ad group names for better reporting and organization, especially in complex campaigns.
 
 ### Editing Budget
 - **Icon:** 💳

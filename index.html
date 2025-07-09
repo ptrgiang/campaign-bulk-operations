@@ -531,6 +531,17 @@
                   </div>
                 </div>
                 <div class="form-group hidden" id="spKeywordsSection">
+                  <div class="form-group" style="display: flex; flex-direction: row; align-items: center; gap: 1.5rem;">
+                    <label style="margin-bottom: 0;">SP Level</label>
+                    <div class="radio-group" style="display: flex; gap: 1rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="radio" name="spLevel" value="lv1-lv2" checked> LV1/LV2
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="radio" name="spLevel" value="gnr"> GNR/GNR2/SPF
+                        </label>
+                    </div>
+                  </div>
                   <div class="form-grid-3">
                     <div class="form-group">
                       <label for="lv1Keywords">
@@ -1068,6 +1079,8 @@
               </div>
             </div>
           </div>
+          <div id="spBidInputs" class="hidden"></div>
+          <div id="spAdGroupInputs" class="hidden"></div>
         </div>
         <div class="modal-footer-confirm">
           <button type="button" class="btn btn-gray" id="cancelEdit">Cancel</button>
