@@ -751,7 +751,7 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, lv1AdGroup, lv1AdGroup, 0.5));
       newCampaignData.push(entityBuilder.createSpProductAd(campaignId, lv1AdGroup, sku));
 
-      lv1Keywords.forEach(({ keyword }) => {
+      lv1Keywords.forEach(keyword => {
           newCampaignData.push(entityBuilder.createSpKeyword(campaignId, lv1AdGroup, keyword, "phrase", 0.5));
       });
 
