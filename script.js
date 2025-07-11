@@ -94,8 +94,11 @@ const elements = {
   // Alerts
   errorAlert: document.getElementById("errorAlert"),
   successAlert: document.getElementById("successAlert"),
+  warningAlert: document.getElementById("warningAlert"),
   errorMessage: document.getElementById("errorMessage"),
+  warningMessage: document.getElementById("warningMessage"),
   closeError: document.getElementById("closeError"),
+  closeWarning: document.getElementById("closeWarning"),
 
   // Campaign List
   campaignList: document.getElementById("campaignList"),
@@ -178,8 +181,40 @@ const elements = {
 };
 
 // UI Functions
+const resetOptionalFields = () => {
+  const fieldsToClear = [
+    'keywords', 'exactKeywords', 'phraseKeywords', 'broadKeywords',
+    'negativeKeywords', 'negativeExactKeywords', 'negativePhraseKeywords',
+    'lv1Keywords', 'lv2Keywords', 'spNegativeKeywords',
+    'competitorAsins', 'videoId', 'productName'
+  ];
+  fieldsToClear.forEach(field => {
+    elements[field].value = '';
+  });
+
+  const bidsToReset = {
+    'looseMatch': '0.25',
+    'closeMatch': '0.25',
+    'complements': '0.25',
+    'substitutes': '0.25'
+  };
+  for (const [field, value] of Object.entries(bidsToReset)) {
+    elements[field].value = value;
+  }
+
+  const tableBody = document.querySelector("#warningTable tbody");
+  if (tableBody) {
+    tableBody.innerHTML = "";
+  }
+  
+  hideError();
+  hideWarning();
+};
+
 const updateFormUI = () => {
   const campaignType = elements.campaignType.value;
+
+  resetOptionalFields();
 
   // Hide all optional sections first
   elements.videoIdSection.classList.add("hidden");
@@ -266,7 +301,6 @@ const createCampaignId = (productNumber, sku, campaignType) => {
   }`;
 };
 
-// Validation Functions
 const validateRequiredFields = () => {
   const campaignType = elements.campaignType.value;
   const productNumber = elements.productNumber.value.trim();
@@ -274,77 +308,112 @@ const validateRequiredFields = () => {
   const asin = elements.asin.value.trim();
   const videoId = elements.videoId.value.trim();
   const productName = elements.productName.value.trim();
+  const errors = [];
+
+  // Helper function to clean and validate keywords
+  const processKeywords = (rawKeywords, keywordType) => {
+    const valid = [];
+    const invalid = [];
+    const seen = new Set();
+    const keywords = rawKeywords.trim().split('\n').filter(Boolean);
+    const specialCharsRegex = /[!@#$%^*()_+={}\[\]|\\:;"<>,?\/~`]/;
+
+    for (const kw of keywords) {
+      const originalKw = kw;
+      let cleanedKw = kw.trim();
+      let reason = '';
+
+      if (seen.has(cleanedKw)) {
+        continue; // Silently ignore duplicates
+      }
+      seen.add(cleanedKw);
+
+      if (specialCharsRegex.test(cleanedKw)) {
+        reason = 'Contains special characters';
+      } else {
+        const wordCount = cleanedKw.split(/\s+/).filter(Boolean).length;
+        if (keywordType === 'Targeting' && wordCount > 10) {
+          reason = 'More than 10 words';
+        } else if (keywordType === 'Negative Phrase' && wordCount > 4) {
+          reason = 'More than 4 words';
+        }
+      }
+
+      if (reason) {
+        invalid.push({ keywordType, keyword: originalKw, reason });
+      } else {
+        valid.push(cleanedKw);
+      }
+    }
+    return { valid, invalid };
+  };
+
+  const allInvalidKeywords = [];
+  const processAndCollect = (element, type) => {
+    // Only process visible fields
+    if (element.offsetParent === null) {
+      return [];
+    }
+    const result = processKeywords(element.value, type);
+    allInvalidKeywords.push(...result.invalid);
+    return result.valid;
+  };
 
   // Deduplicate all keyword and ASIN fields
-  const keywords = [...new Set(elements.keywords.value.trim().split("\n").filter(Boolean))];
-  const exactKeywords = [...new Set(elements.exactKeywords.value.trim().split("\n").filter(Boolean))];
-  const phraseKeywords = [...new Set(elements.phraseKeywords.value.trim().split("\n").filter(Boolean))];
-  const broadKeywords = [...new Set(elements.broadKeywords.value.trim().split("\n").filter(Boolean))];
+  const keywords = processAndCollect(elements.keywords, 'Targeting');
+  const exactKeywords = processAndCollect(elements.exactKeywords, 'Targeting');
+  const phraseKeywords = processAndCollect(elements.phraseKeywords, 'Targeting');
+  const broadKeywords = processAndCollect(elements.broadKeywords, 'Targeting');
   const competitorAsins = [...new Set(elements.competitorAsins.value.trim().split("\n").filter(Boolean))];
-  const negativeKeywords = [...new Set(elements.negativeKeywords.value.trim().split("\n").filter(Boolean))];
-  const negativeExactKeywords = [...new Set(elements.negativeExactKeywords.value.trim().split("\n").filter(Boolean))];
-  const negativePhraseKeywords = [...new Set(elements.negativePhraseKeywords.value.trim().split("\n").filter(Boolean))];
-  const lv1Keywords = [...new Set(elements.lv1Keywords.value.trim().split("\n").filter(Boolean))];
-  const lv2Keywords = [...new Set(elements.lv2Keywords.value.trim().split("\n").filter(Boolean))];
-  const spNegativeKeywords = [...new Set(elements.spNegativeKeywords.value.trim().split("\n").filter(Boolean))];
+  const negativeKeywords = processAndCollect(elements.negativeKeywords, 'Negative Phrase');
+  const negativeExactKeywords = processAndCollect(elements.negativeExactKeywords, 'Negative Exact');
+  const negativePhraseKeywords = processAndCollect(elements.negativePhraseKeywords, 'Negative Phrase');
+  const lv1Keywords = processAndCollect(elements.lv1Keywords, 'Targeting');
+  const lv2Keywords = processAndCollect(elements.lv2Keywords, 'Targeting');
+  const spNegativeKeywords = processAndCollect(elements.spNegativeKeywords, 'Negative Phrase');
 
   if (!productNumber) {
-    return { isValid: false, message: "Product Number is required" };
+    errors.push("Product Number is required");
   }
 
   if (campaignType === "sp" && !productName) {
-    return { isValid: false, message: "Product Name is required for SP campaigns" };
+    errors.push("Product Name is required for SP campaigns");
   }
 
   if (campaignType === "sp" && productNumber === productName) {
-    return {
-      isValid: false,
-      message: "Product Number and Product Name must be different for SP campaigns",
-    };
+    errors.push("Product Number and Product Name must be different for SP campaigns");
   }
 
   if (!sku) {
-    return { isValid: false, message: "SKU is required" };
+    errors.push("SKU is required");
   }
 
   if (!asin) {
-    return { isValid: false, message: "ASIN is required" };
+    errors.push("ASIN is required");
   }
 
   if (campaignType.startsWith("video-") && !videoId) {
-    return { isValid: false, message: "Video Media ID is required" };
+    errors.push("Video Media ID is required");
   }
 
   if (campaignType === "pt" && competitorAsins.length === 0) {
-    return {
-      isValid: false,
-      message: "At least one Competitor ASIN is required",
-    };
+    errors.push("At least one Competitor ASIN is required");
   }
 
   if (campaignType === "custom" && exactKeywords.length === 0 && phraseKeywords.length === 0 && broadKeywords.length === 0) {
-    return {
-      isValid: false,
-      message: "At least one targeting keyword is required for Custom campaign type",
-    };
+    errors.push("At least one targeting keyword is required for Custom campaign type");
   }
 
   if (campaignType !== "auto" && campaignType !== "pt" && campaignType !== "custom" && campaignType !== "sp" && keywords.length === 0) {
-    return {
-      isValid: false,
-      message: "At least one targeting keyword is required",
-    };
+    errors.push("At least one targeting keyword is required");
   }
 
   if (campaignType === "sp" && lv1Keywords.length === 0 && lv2Keywords.length === 0) {
-    return {
-      isValid: false,
-      message: "At least one LV1 or LV2 keyword is required for SP campaigns",
-    };
+    errors.push("At least one LV1 or LV2 keyword is required for SP campaigns");
   }
 
   return {
-    isValid: true,
+    isValid: errors.length === 0,
     data: {
       productNumber,
       sku,
@@ -366,18 +435,38 @@ const validateRequiredFields = () => {
       country: elements.country.value,
       campaignType: elements.campaignType.value,
     },
+    errors,
+    warnings: allInvalidKeywords,
   };
 };
 
 // Alert Functions
 const showError = (message) => {
-  elements.errorMessage.textContent = message;
+  elements.errorMessage.innerHTML = message;
   elements.errorAlert.classList.remove("hidden");
   elements.successAlert.classList.add("hidden");
 };
 
 const hideError = () => {
   elements.errorAlert.classList.add("hidden");
+};
+
+const showWarning = (warnings) => {
+  const tableBody = document.querySelector("#warningTable tbody");
+  tableBody.innerHTML = ""; // Clear previous warnings
+
+  warnings.forEach(warning => {
+    const row = tableBody.insertRow();
+    row.insertCell(0).textContent = warning.keywordType;
+    row.insertCell(1).textContent = warning.keyword;
+    row.insertCell(2).textContent = warning.reason;
+  });
+
+  elements.warningAlert.classList.remove("hidden");
+};
+
+const hideWarning = () => {
+  elements.warningAlert.classList.add("hidden");
 };
 
 const showSuccess = (message = "Campaign added successfully!") => {
@@ -631,6 +720,7 @@ const addCampaignToCampaignData = (formData) => {
 
   // Prepare new campaign data
   const newCampaignData = [];
+  const spLevel = document.querySelector('input[name="spLevel"]:checked').value;
 
   if (campaignType === "auto") {
     const looseMatchBid = parseFloat(elements.looseMatch.value) || 0;
@@ -646,6 +736,8 @@ const addCampaignToCampaignData = (formData) => {
     );
 
     const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Auto");
+    spCampaign.campaignType = campaignType;
+    spCampaign.country = country;
     spCampaign.asin = asin;
     newCampaignData.push(spCampaign);
     newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 0));
@@ -659,6 +751,8 @@ const addCampaignToCampaignData = (formData) => {
     newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "Auto", "substitutes", substitutesBid));
   } else if (campaignType === "custom") {
     const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    spCampaign.campaignType = campaignType;
+    spCampaign.country = country;
     spCampaign.asin = asin;
     newCampaignData.push(spCampaign);
     newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 0));
@@ -683,6 +777,8 @@ const addCampaignToCampaignData = (formData) => {
     });
   } else if (campaignType === "research") {
     const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    spCampaign.campaignType = campaignType;
+    spCampaign.country = country;
     spCampaign.asin = asin;
     newCampaignData.push(spCampaign);
     newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 0));
@@ -701,6 +797,8 @@ const addCampaignToCampaignData = (formData) => {
     });
   } else if (campaignType === "performance") {
     const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    spCampaign.campaignType = campaignType;
+    spCampaign.country = country;
     spCampaign.asin = asin;
     newCampaignData.push(spCampaign);
     newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 0));
@@ -713,6 +811,8 @@ const addCampaignToCampaignData = (formData) => {
     });
   } else if (campaignType === "pt") {
     const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    spCampaign.campaignType = campaignType;
+    spCampaign.country = country;
     spCampaign.asin = asin;
     newCampaignData.push(spCampaign);
     newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement top", 50));
@@ -724,7 +824,10 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "PT", `asin="${asin}"`, 0.25));
     });
   } else if (campaignType.startsWith("video-")) {
-    newCampaignData.push(entityBuilder.createSbCampaign(campaignId, portfolioId, today, 10, brandEntityId, asin, videoId));
+    const sbCampaign = entityBuilder.createSbCampaign(campaignId, portfolioId, today, 10, brandEntityId, asin, videoId);
+    sbCampaign.campaignType = campaignType;
+    sbCampaign.country = country;
+    newCampaignData.push(sbCampaign);
     keywords.forEach((keyword) => {
       newCampaignData.push(entityBuilder.createSbKeyword(campaignId, keyword, campaignType.replace("video-", ""), 0.25));
     });
@@ -732,8 +835,11 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSbNegativeKeyword(campaignId, keyword, "negativePhrase"));
     });
   } else if (campaignType === "sp") {
-    const spLevel = document.querySelector('input[name="spLevel"]:checked').value;
     const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    spCampaign.campaignType = campaignType;
+    spCampaign.country = country;
+    spCampaign.productName = productName;
+    spCampaign.spLevel = spLevel;
     spCampaign.asin = asin;
     newCampaignData.push(spCampaign);
 
@@ -982,72 +1088,106 @@ const removeCampaign = (campaignId) => {
 window.removeCampaign = removeCampaign;
 
 const copyCampaignToForm = (campaignId) => {
-  const campaign = campaignData.find(
-    (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId
-  );
-  if (!campaign) return;
-
   const campaignEntries = campaignData.filter(
     (entry) => (entry["Campaign Id"] || entry["Campaign ID"]) === campaignId
   );
-
   const mainCampaign = campaignEntries.find((e) => e.Entity === "Campaign");
-  const keywords = campaignEntries
-    .filter((e) => e.Entity === "Keyword")
-    .map((e) => e["Keyword Text"]);
-  const negativeKeywords = campaignEntries
-    .filter((e) => e.Entity === "Negative Keyword")
-    .map((e) => e["Keyword Text"]);
-  const competitorAsins = campaignEntries
-    .filter((e) => e.Entity === "Product targeting" && e["Product Targeting Expression"].startsWith('asin="'))
-    .map((e) => e["Product Targeting Expression"].replace(/asin=|\"/g, ""));
 
-  if (mainCampaign) {
-    const campaignIdParts = (
-      mainCampaign["Campaign Id"] || mainCampaign["Campaign ID"]
-    ).split(" ");
-    elements.productNumber.value = campaignIdParts[0] || "";
-    elements.sku.value = campaignIdParts[1] || "";
-    elements.portfolioId.value =
-      mainCampaign["Portfolio Id"] || mainCampaign["Portfolio ID"] || "";
-    elements.videoId.value = mainCampaign["Video Media Ids"] || "";
+  if (!mainCampaign) return;
 
-    // Set campaign type and update UI
-    const campaignType = Object.keys(campaignNameMap).find(key => campaignNameMap[key] === mainCampaign["Campaign Name"].replace(campaignIdParts[0], "Product Number").replace(campaignIdParts[1], "SKU"));
-    if (campaignType) {
-      elements.campaignType.value = campaignType;
-      updateFormUI();
+  // Reset form before populating
+  resetOptionalFields();
+  
+  const {
+    campaignType,
+    country,
+    productName,
+    spLevel,
+    "Portfolio Id": portfolioId,
+    "Portfolio ID": portfolioID,
+    "Video Media Ids": videoId,
+    "Creative asins": creativeAsins,
+    asin: spAsin,
+  } = mainCampaign;
 
-      if (campaignType === 'auto') {
-        const targetingBids = campaignEntries
-          .filter(e => e.Entity === 'Product targeting')
-          .reduce((acc, e) => {
-            acc[e["Product Targeting Expression"]] = e.Bid;
-            return acc;
-          }, {});
+  elements.campaignType.value = campaignType;
+  updateFormUI(); // This will show the correct sections
 
-        elements.looseMatch.value = targetingBids['loose-match'] || "";
-        elements.closeMatch.value = targetingBids['close-match'] || "";
-        elements.complements.value = targetingBids['complements'] || "";
-        elements.substitutes.value = targetingBids['substitutes'] || "";
-      }
+  elements.country.value = country || 'US';
+  elements.productNumber.value = (mainCampaign["Campaign Name"] || campaignId).split(" ")[0] || "";
+  elements.sku.value = (mainCampaign["SKU"] || (mainCampaign["Campaign Name"] || campaignId).split(" ")[1]) || "";
+  elements.portfolioId.value = portfolioId || portfolioID || "";
+  elements.asin.value = spAsin || creativeAsins || "";
+
+  if (campaignType.startsWith("video-")) {
+    elements.videoId.value = videoId || "";
+    elements.keywords.value = campaignEntries
+      .filter(e => e.Entity === 'Keyword')
+      .map(e => e['Keyword Text']).join('\n');
+    elements.negativeKeywords.value = campaignEntries
+      .filter(e => e.Entity === 'Negative Keyword')
+      .map(e => e['Keyword Text']).join('\n');
+  } else if (campaignType === 'auto') {
+    const targetingBids = campaignEntries
+      .filter(e => e.Entity === 'Product targeting')
+      .reduce((acc, e) => {
+        acc[e["Product Targeting Expression"]] = e.Bid;
+        return acc;
+      }, {});
+    elements.looseMatch.value = targetingBids['loose-match'] || "0.25";
+    elements.closeMatch.value = targetingBids['close-match'] || "0.25";
+    elements.complements.value = targetingBids['complements'] || "0.25";
+    elements.substitutes.value = targetingBids['substitutes'] || "0.25";
+  } else if (campaignType === 'pt') {
+    elements.competitorAsins.value = campaignEntries
+      .filter(e => e.Entity === 'Product targeting' && e["Product Targeting Expression"].startsWith('asin="'))
+      .map(e => e["Product Targeting Expression"].replace(/asin=|"/g, "")).join('\n');
+  } else if (campaignType === 'custom') {
+    elements.exactKeywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Match Type'] === 'exact').map(e => e['Keyword Text']).join('\n');
+    elements.phraseKeywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Match Type'] === 'phrase').map(e => e['Keyword Text']).join('\n');
+    elements.broadKeywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Match Type'] === 'broad').map(e => e['Keyword Text']).join('\n');
+    elements.negativeExactKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative keyword' && e['Match Type'] === 'negativeExact').map(e => e['Keyword Text']).join('\n');
+    elements.negativePhraseKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative keyword' && e['Match Type'] === 'negativePhrase').map(e => e['Keyword Text']).join('\n');
+  } else if (campaignType === 'research') {
+    elements.keywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Match Type'] === 'broad').map(e => e['Keyword Text']).join('\n');
+    elements.negativeExactKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative keyword' && e['Match Type'] === 'negativeExact').map(e => e['Keyword Text']).join('\n');
+    elements.negativePhraseKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative keyword' && e['Match Type'] === 'negativePhrase').map(e => e['Keyword Text']).join('\n');
+  } else if (campaignType === 'performance') {
+    elements.keywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Match Type'] === 'exact').map(e => e['Keyword Text']).join('\n');
+  } else if (campaignType === 'sp') {
+    elements.productName.value = productName || '';
+    document.querySelector(`input[name="spLevel"][value="${spLevel}"]`).checked = true;
+    
+    const adGroups = campaignEntries.filter(e => e.Entity === 'Ad group');
+    const lv1AdGroup = adGroups.find(ag => ag['Ad Group Name'].endsWith(' - LV1'));
+    const lv2AdGroup = adGroups.find(ag => ag['Ad Group Name'].endsWith(' - LV2'));
+
+    if (lv1AdGroup) {
+      elements.lv1Keywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Ad Group ID'] === lv1AdGroup['Ad Group ID']).map(e => e['Keyword Text']).join('\n');
     }
-
-    if (mainCampaign.Product === "Sponsored Products") {
-      elements.asin.value = mainCampaign.asin || "";
+    if (lv2AdGroup) {
+      elements.lv2Keywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Ad Group ID'] === lv2AdGroup['Ad Group ID']).map(e => e['Keyword Text']).join('\n');
     } else {
-      elements.asin.value = mainCampaign["Creative asins"] || "";
+      // Handle GNR case if needed by inspecting ad group names
+      const gnrAdGroups = adGroups.filter(ag => ag['Ad Group Name'].includes(' - GNR') || ag['Ad Group Name'].includes(' - SPF'));
+      const lv1KeywordsGNR = [];
+      const lv2KeywordsGNR = [];
+      gnrAdGroups.forEach(ag => {
+        const keywords = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Ad Group ID'] === ag['Ad Group ID']).map(e => e['Keyword Text']);
+        if (ag['Ad Group Name'].startsWith(elements.productNumber.value)) {
+          lv1KeywordsGNR.push(...keywords);
+        } else if (ag['Ad Group Name'].startsWith(productName)) {
+          lv2KeywordsGNR.push(...keywords);
+        }
+      });
+      elements.lv1Keywords.value = [...new Set(lv1KeywordsGNR)].join('\n');
+      elements.lv2Keywords.value = [...new Set(lv2KeywordsGNR)].join('\n');
     }
+    
+    elements.spNegativeKeywords.value = campaignEntries.filter(e => e.Entity === 'Campaign negative keyword').map(e => e['Keyword Text']).join('\n');
   }
 
-  elements.keywords.value = keywords.join("\n");
-  elements.negativeKeywords.value = negativeKeywords.join("\n");
-  elements.competitorAsins.value = competitorAsins.join("\n");
-
-  // Scroll to top to see the form has been populated
   window.scrollTo({ top: 0, behavior: "smooth" });
-
-  // Optional: Flash a success message
   showSuccess("Campaign copied to form!");
 };
 window.copyCampaignToForm = copyCampaignToForm;
@@ -1654,10 +1794,16 @@ const clearTemplate = () => {
 
 const addCampaign = () => {
   hideError();
+  hideWarning();
 
   const validation = validateRequiredFields();
+
+  if (validation.warnings && validation.warnings.length > 0) {
+    showWarning(validation.warnings);
+  }
+
   if (!validation.isValid) {
-    showError(validation.message);
+    showError(validation.errors.join('<br>'));
     return;
   }
 
@@ -1750,6 +1896,7 @@ const initializeEventListeners = () => {
 
   // Alert events
   elements.closeError.addEventListener("click", hideError);
+  elements.closeWarning.addEventListener("click", hideWarning);
 
   // Modal events
   elements.closeModal.addEventListener("click", hideModal);

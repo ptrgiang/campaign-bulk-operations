@@ -775,6 +775,46 @@
               <span>Campaign added successfully!</span>
             </div>
 
+            <!-- Warning Alert -->
+            <div id="warningAlert" class="alert alert-warning hidden">
+              <div class="alert-content">
+                <div class="alert-header">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  <strong>Removed invalid keywords:</strong>
+                </div>
+                <div class="warning-table-container">
+                  <table id="warningTable">
+                    <thead>
+                      <tr>
+                        <th>Keyword Type</th>
+                        <th>Keyword</th>
+                        <th>Reason</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <button type="button" class="alert-close" id="closeWarning">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
             <!-- Action Buttons -->
             <div class="action-buttons">
               <button type="button" id="clearForm" class="btn btn-warning">
