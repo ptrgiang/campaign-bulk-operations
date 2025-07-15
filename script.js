@@ -233,6 +233,9 @@ const updateFormUI = () => {
     elements.productTargetingSection.classList.remove("hidden");
   } else if (campaignType === "pt") {
     elements.ptTargetingSection.classList.remove("hidden");
+  } else if (campaignType === "video-pt") {
+    elements.videoIdSection.classList.remove("hidden");
+    elements.ptTargetingSection.classList.remove("hidden");
   } else if (campaignType.startsWith("video-")) {
     elements.videoIdSection.classList.remove("hidden");
     elements.keywordsSection.classList.remove("hidden");
@@ -285,6 +288,7 @@ const campaignNameMap = {
   "video-broad": "Product Number SKU Video Ads Broad",
   "video-phrase": "Product Number SKU Video Ads Phrase",
   "video-exact": "Product Number SKU Video Ads Exact",
+  "video-pt": "Product Number SKU Video Ads PT",
 };
 
 const createCampaignId = (productNumber, sku, campaignType) => {
@@ -400,11 +404,15 @@ const validateRequiredFields = () => {
     errors.push("At least one Competitor ASIN is required");
   }
 
+  if (campaignType === "video-pt" && competitorAsins.length === 0) {
+    errors.push("At least one Competitor ASIN is required");
+  }
+
   if (campaignType === "custom" && exactKeywords.length === 0 && phraseKeywords.length === 0 && broadKeywords.length === 0) {
     errors.push("At least one targeting keyword is required for Custom campaign type");
   }
 
-  if (campaignType !== "auto" && campaignType !== "pt" && campaignType !== "custom" && campaignType !== "sp" && keywords.length === 0) {
+  if (campaignType !== "auto" && campaignType !== "pt" && campaignType !== "custom" && campaignType !== "sp" && campaignType !== "video-pt" && keywords.length === 0) {
     errors.push("At least one targeting keyword is required");
   }
 
@@ -823,6 +831,14 @@ const addCampaignToCampaignData = (formData) => {
     competitorAsins.forEach((asin) => {
       newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "PT", `asin="${asin}"`, 0.25));
     });
+  } else if (campaignType === "video-pt") {
+    const sbCampaign = entityBuilder.createSbCampaign(campaignId, portfolioId, today, 10, brandEntityId, asin, videoId);
+    sbCampaign.campaignType = campaignType;
+    sbCampaign.country = country;
+    newCampaignData.push(sbCampaign);
+    competitorAsins.forEach((asin) => {
+      newCampaignData.push(entityBuilder.createSbProductTargeting(campaignId, `asin="${asin}"`, 0.25));
+    });
   } else if (campaignType.startsWith("video-")) {
     const sbCampaign = entityBuilder.createSbCampaign(campaignId, portfolioId, today, 10, brandEntityId, asin, videoId);
     sbCampaign.campaignType = campaignType;
@@ -1046,6 +1062,7 @@ const updateCampaignList = () => {
                   <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                 </svg>
               </button>
+              ${campaign.Product === 'Sponsored Products' ? `
               <button type="button" class="campaign-edit" title="Edit Bidding Adjustment" onclick="showEditModal('${campaignId}', 'bidding')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="19" y1="5" x2="5" y2="19"></line>
@@ -1053,6 +1070,7 @@ const updateCampaignList = () => {
                     <circle cx="17.5" cy="17.5" r="2.5"></circle>
                 </svg>
               </button>
+              ` : ''}
               <button type="button" class="campaign-copy" title="Copy to form" onclick="copyCampaignToForm('${campaignId}')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -1119,7 +1137,13 @@ const copyCampaignToForm = (campaignId) => {
   elements.portfolioId.value = portfolioId || portfolioID || "";
   elements.asin.value = spAsin || creativeAsins || "";
 
-  if (campaignType.startsWith("video-")) {
+  if (campaignType === 'video-pt') {
+    elements.videoId.value = videoId || "";
+    elements.competitorAsins.value = campaignEntries
+      .filter(e => e.Entity === 'Product targeting' && e["Product Targeting Expression"].startsWith('asin="'))
+      .map(e => e["Product Targeting Expression"].replace(/asin=|"/g, "")).join('\n');
+  }
+  else if (campaignType.startsWith("video-")) {
     elements.videoId.value = videoId || "";
     elements.keywords.value = campaignEntries
       .filter(e => e.Entity === 'Keyword')
@@ -1209,9 +1233,7 @@ const showEditModal = (campaignId, type) => {
     campaignEntry.Product === "Sponsored Products" &&
     campaignEntry["Targeting Type"] === "Auto";
 
-  const isPtCampaign =
-    campaignEntry.Product === "Sponsored Products" &&
-    campaignEntry["Campaign Name"].endsWith("PT");
+  const isPtCampaign = campaignEntry.campaignType === 'pt' || campaignEntry.campaignType === 'video-pt';
 
   const hasAdGroup = campaignData.some(
     (entry) =>
