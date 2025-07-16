@@ -1153,9 +1153,8 @@ const copyCampaignToForm = (campaignId) => {
     elements.keywords.value = campaignEntries
       .filter(e => e.Entity === 'Keyword')
       .map(e => e['Keyword Text']).join('\n');
-    elements.negativeKeywords.value = campaignEntries
-      .filter(e => e.Entity === 'Negative Keyword')
-      .map(e => e['Keyword Text']).join('\n');
+    elements.negativeExactKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative Keyword' && e['Match Type'] === 'negativeExact').map(e => e['Keyword Text']).join('\n');
+    elements.negativePhraseKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative Keyword' && e['Match Type'] === 'negativePhrase').map(e => e['Keyword Text']).join('\n');
   } else if (campaignType === 'auto') {
     const targetingBids = campaignEntries
       .filter(e => e.Entity === 'Product targeting')
