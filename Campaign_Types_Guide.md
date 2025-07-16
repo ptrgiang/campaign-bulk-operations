@@ -151,7 +151,9 @@ These campaigns are created under the "Sponsored Brands" product type and are al
   - `Product Number`, `SKU`, `ASIN`
   - `Video Media ID`
   - `Targeting Keywords`
-  - `Negative Keywords`
+  - **Negative Keywords:**
+    - `Negative Exact`
+    - `Negative Phrase`
 - **Generated Template Rows:**
   - **1 x Campaign:**
     - `Product`: Sponsored Brands
@@ -163,7 +165,23 @@ These campaigns are created under the "Sponsored Brands" product type and are al
     - **Video Ads Broad:** `broad`
     - **Video Ads Phrase:** `phrase`
     - **Video Ads Exact:** `exact`
-  - **Negative Keywords:** All provided negative keywords are added as `Negative Keyword` rows with a `negativePhrase` match type.
+  - **Negative Keywords:** All provided negative keywords are added as `Negative Keyword` rows with their corresponding match types (`negativeExact` or `negativePhrase`).
+
+### Video Ads PT
+
+- **Purpose:** Creates a Sponsored Brands video campaign focused on competitor ASINs.
+- **Required Fields:**
+  - `Product Number`, `SKU`, `ASIN`
+  - `Video Media ID`
+  - `Competitor ASINs` (one per line)
+- **Generated Template Rows:**
+  - **1 x Campaign:**
+    - `Product`: Sponsored Brands
+    - `Ad Format`: video
+    - `Budget`: 10
+    - `Creative asins`: The ASIN provided.
+    - `Video Media Ids`: The Video Media ID provided.
+  - **Product Targeting:** One `Product targeting` row is created for each competitor ASIN entered. The expression is `asin="COMPETITOR_ASIN"` and the bid is `0.25`.
 
 ---
 
