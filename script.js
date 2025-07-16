@@ -342,6 +342,8 @@ const validateRequiredFields = () => {
           reason = 'More than 10 words';
         } else if (keywordType === 'Negative Phrase' && wordCount > 4) {
           reason = 'More than 4 words';
+        } else if (keywordType === 'Negative Exact' && cleanedKw.length >= 80) {
+          reason = 'More than 80 characters';
         }
       }
 
