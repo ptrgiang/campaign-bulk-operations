@@ -214,7 +214,7 @@ const resetOptionalFields = () => {
 const updateFormUI = () => {
   const campaignType = elements.campaignType.value;
 
-  resetOptionalFields();
+  // resetOptionalFields();
 
   // Hide all optional sections first
   elements.videoIdSection.classList.add("hidden");
