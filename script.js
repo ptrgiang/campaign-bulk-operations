@@ -239,6 +239,8 @@ const updateFormUI = () => {
   } else if (campaignType.startsWith("video-")) {
     elements.videoIdSection.classList.remove("hidden");
     elements.keywordsSection.classList.remove("hidden");
+    document.getElementById("negativeKeywordsSection").classList.add("hidden");
+    document.getElementById("researchNegativeKeywordsSection").classList.remove("hidden");
   } else if (campaignType === "research") {
     elements.keywordsSection.classList.remove("hidden");
     document.getElementById("negativeKeywordsSection").classList.add("hidden");
@@ -847,7 +849,10 @@ const addCampaignToCampaignData = (formData) => {
     keywords.forEach((keyword) => {
       newCampaignData.push(entityBuilder.createSbKeyword(campaignId, keyword, campaignType.replace("video-", ""), 0.25));
     });
-    negativeKeywords.forEach((keyword) => {
+    negativeExactKeywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSbNegativeKeyword(campaignId, keyword, "negativeExact"));
+    });
+    negativePhraseKeywords.forEach((keyword) => {
       newCampaignData.push(entityBuilder.createSbNegativeKeyword(campaignId, keyword, "negativePhrase"));
     });
   } else if (campaignType === "sp") {
