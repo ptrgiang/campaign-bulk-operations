@@ -231,6 +231,10 @@ const updateFormUI = () => {
 
   if (campaignType === "auto") {
     elements.productTargetingSection.classList.remove("hidden");
+    elements.keywordsSection.classList.remove("hidden");
+    document.getElementById("negativeKeywordsSection").classList.add("hidden");
+    document.getElementById("keywords").parentElement.classList.add("hidden");
+    document.getElementById("researchNegativeKeywordsSection").classList.remove("hidden");
   } else if (campaignType === "pt") {
     elements.ptTargetingSection.classList.remove("hidden");
   } else if (campaignType === "video-pt") {
@@ -338,7 +342,7 @@ const validateRequiredFields = () => {
         reason = 'Contains special characters';
       } else {
         const wordCount = cleanedKw.split(/\s+/).filter(Boolean).length;
-        if (keywordType === 'Targeting' && wordCount > 10) {
+        if ((keywordType === 'Targeting' || keywordType === 'Negative Exact') && wordCount > 10) {
           reason = 'More than 10 words';
         } else if (keywordType === 'Negative Phrase' && wordCount > 4) {
           reason = 'More than 4 words';
@@ -761,6 +765,12 @@ const addCampaignToCampaignData = (formData) => {
     newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "Auto", "close-match", closeMatchBid));
     newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "Auto", "complements", complementsBid));
     newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "Auto", "substitutes", substitutesBid));
+    negativeExactKeywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, "Auto", keyword, "negativeExact"));
+    });
+    negativePhraseKeywords.forEach((keyword) => {
+      newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, "Auto", keyword, "negativePhrase"));
+    });
   } else if (campaignType === "custom") {
     const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
     spCampaign.campaignType = campaignType;
@@ -1168,6 +1178,8 @@ const copyCampaignToForm = (campaignId) => {
     elements.closeMatch.value = targetingBids['close-match'] || "0.25";
     elements.complements.value = targetingBids['complements'] || "0.25";
     elements.substitutes.value = targetingBids['substitutes'] || "0.25";
+    elements.negativeExactKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative keyword' && e['Match Type'] === 'negativeExact').map(e => e['Keyword Text']).join('\n');
+    elements.negativePhraseKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative keyword' && e['Match Type'] === 'negativePhrase').map(e => e['Keyword Text']).join('\n');
   } else if (campaignType === 'pt') {
     elements.competitorAsins.value = campaignEntries
       .filter(e => e.Entity === 'Product targeting' && e["Product Targeting Expression"].startsWith('asin="'))

@@ -57,6 +57,7 @@ These campaigns are created under the "Sponsored Products" product type in the E
   - **1 x Ad group:** Named "Auto". The `Ad Group Default Bid` is the highest value entered among the four match type bids.
   - **1 x Product ad:** Links your SKU to the ad group.
   - **4 x Product targeting:** One for each auto-targeting group (`loose-match`, `close-match`, `complements`, `substitutes`) with their specified bids.
+  - **Negative Keywords:** Adds `Negative keyword` rows for `negativeExact` and `negativePhrase`.
 
 ### Research
 
