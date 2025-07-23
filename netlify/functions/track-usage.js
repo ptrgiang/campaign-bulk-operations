@@ -6,7 +6,7 @@ exports.handler = async function(event) {
   }
 
   try {
-    const { campaignCount } = JSON.parse(event.body);
+    const { campaignCount, userId } = JSON.parse(event.body);
     const credentials = JSON.parse(process.env.GOOGLE_API_CREDENTIALS);
     const auth = new google.auth.GoogleAuth({
       credentials,
@@ -23,7 +23,7 @@ exports.handler = async function(event) {
       range: sheetName,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[date, campaignCount]],
+        values: [[date, campaignCount, userId]],
       },
     });
 

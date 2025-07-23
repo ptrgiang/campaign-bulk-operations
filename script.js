@@ -1771,30 +1771,16 @@ const renderTable = (table, data, columns) => {
 };
 
 // Excel Functions
-const downloadExcel = async () => {
-  // Calculate unique campaign count
-  const seen = new Set();
-  campaignData.forEach((entry) => {
-    const campaignId = entry["Campaign Id"] || entry["Campaign ID"];
-    if (campaignId) {
-      seen.add(campaignId);
-    }
-  });
-  const campaignCount = seen.size;
-
-  // Track usage if there are campaigns to download
-  if (campaignCount > 0) {
-    try {
-      await fetch('/.netlify/functions/track-usage', {
-        method: 'POST',
-        body: JSON.stringify({ campaignCount }),
-      });
-    } catch (error) {
-      console.error('Error tracking usage:', error);
-      // Don't block Excel generation if tracking fails
-    }
+const getOrCreateUserId = () => {
+  let userId = localStorage.getItem('userId');
+  if (!userId) {
+    userId = self.crypto.randomUUID();
+    localStorage.setItem('userId', userId);
   }
+  return userId;
+};
 
+const downloadExcel = async () => {
   try {
     // Import SheetJS library
     const XLSX = await import(
@@ -1836,6 +1822,30 @@ const downloadExcel = async () => {
   } catch (error) {
     console.error("Error downloading Excel file:", error);
     showError("Failed to download Excel file. Please try again.");
+  }
+
+  // Calculate unique campaign count
+  const seen = new Set();
+  campaignData.forEach((entry) => {
+    const campaignId = entry["Campaign Id"] || entry["Campaign ID"];
+    if (campaignId) {
+      seen.add(campaignId);
+    }
+  });
+  const campaignCount = seen.size;
+  const userId = getOrCreateUserId();
+
+  // Track usage if there are campaigns to download
+  if (campaignCount > 0) {
+    try {
+      await fetch('/.netlify/functions/track-usage', {
+        method: 'POST',
+        body: JSON.stringify({ campaignCount, userId }),
+      });
+    } catch (error) {
+      console.error('Error tracking usage:', error);
+      // Don't block Excel generation if tracking fails
+    }
   }
 };
 
