@@ -1772,6 +1772,29 @@ const renderTable = (table, data, columns) => {
 
 // Excel Functions
 const downloadExcel = async () => {
+  // Calculate unique campaign count
+  const seen = new Set();
+  campaignData.forEach((entry) => {
+    const campaignId = entry["Campaign Id"] || entry["Campaign ID"];
+    if (campaignId) {
+      seen.add(campaignId);
+    }
+  });
+  const campaignCount = seen.size;
+
+  // Track usage if there are campaigns to download
+  if (campaignCount > 0) {
+    try {
+      await fetch('/.netlify/functions/track-usage', {
+        method: 'POST',
+        body: JSON.stringify({ campaignCount }),
+      });
+    } catch (error) {
+      console.error('Error tracking usage:', error);
+      // Don't block Excel generation if tracking fails
+    }
+  }
+
   try {
     // Import SheetJS library
     const XLSX = await import(
