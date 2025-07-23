@@ -1824,29 +1824,38 @@ const downloadExcel = async () => {
     showError("Failed to download Excel file. Please try again.");
   }
 
-  // Calculate unique campaign count
-  const seen = new Set();
+  // --- Start Tracking Logic ---
+  const uniqueCampaigns = new Map();
   campaignData.forEach((entry) => {
     const campaignId = entry["Campaign Id"] || entry["Campaign ID"];
-    if (campaignId) {
-      seen.add(campaignId);
+    // Store the first entry for each unique campaign to get its country
+    if (campaignId && !uniqueCampaigns.has(campaignId)) {
+      uniqueCampaigns.set(campaignId, entry);
     }
   });
-  const campaignCount = seen.size;
-  const userId = getOrCreateUserId();
 
-  // Track usage if there are campaigns to download
+  const campaignCount = uniqueCampaigns.size;
+
+  // Track usage only if there are campaigns
   if (campaignCount > 0) {
+    const userId = getOrCreateUserId();
+    const campaignNames = Array.from(uniqueCampaigns.keys()).join(', ');
+    
+    // Get the country from the very first unique campaign in the template
+    const firstCampaign = uniqueCampaigns.values().next().value;
+    const country = firstCampaign ? firstCampaign.country || 'N/A' : 'N/A';
+
     try {
       await fetch('/.netlify/functions/track-usage', {
         method: 'POST',
-        body: JSON.stringify({ campaignCount, userId }),
+        body: JSON.stringify({ userId, country, campaignCount, campaignNames }),
       });
     } catch (error) {
       console.error('Error tracking usage:', error);
-      // Don't block Excel generation if tracking fails
+      // Don't block user if tracking fails
     }
   }
+  // --- End Tracking Logic ---
 };
 
 // Form Functions

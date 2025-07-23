@@ -6,7 +6,7 @@ exports.handler = async function(event) {
   }
 
   try {
-    const { campaignCount, userId } = JSON.parse(event.body);
+    const { userId, country, campaignCount, campaignNames } = JSON.parse(event.body);
     const credentials = JSON.parse(process.env.GOOGLE_API_CREDENTIALS);
     const auth = new google.auth.GoogleAuth({
       credentials,
@@ -16,14 +16,22 @@ exports.handler = async function(event) {
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = '1CdM9jgDGJFyIQD3uMs5McUvWtIVg0me1MJW_JHOwBik';
     const sheetName = 'Usage';
-    const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Format date as YYYY-MM-DD HH:MM:SS in UTC
+    const now = new Date();
+    const date = now.getUTCFullYear() + '-' +
+               String(now.getUTCMonth() + 1).padStart(2, '0') + '-' +
+               String(now.getUTCDate()).padStart(2, '0') + ' ' +
+               String(now.getUTCHours()).padStart(2, '0') + ':' +
+               String(now.getUTCMinutes()).padStart(2, '0') + ':' +
+               String(now.getUTCSeconds()).padStart(2, '0');
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: sheetName,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[date, campaignCount, userId]],
+        values: [[date, userId, country, campaignCount, campaignNames]],
       },
     });
 
