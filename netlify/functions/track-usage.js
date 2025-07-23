@@ -7,6 +7,10 @@ exports.handler = async function(event) {
 
   try {
     const { userId, country, campaignCount, campaignNames } = JSON.parse(event.body);
+
+    // Log received data for debugging in Netlify
+    console.log('Received tracking data:', { userId, country, campaignCount, campaignNames });
+
     const credentials = JSON.parse(process.env.GOOGLE_API_CREDENTIALS);
     const auth = new google.auth.GoogleAuth({
       credentials,
@@ -17,21 +21,32 @@ exports.handler = async function(event) {
     const spreadsheetId = '1CdM9jgDGJFyIQD3uMs5McUvWtIVg0me1MJW_JHOwBik';
     const sheetName = 'Usage';
 
-    // Format date as YYYY-MM-DD HH:MM:SS in UTC
+    // Create a new Date object for GMT+7
     const now = new Date();
-    const date = now.getUTCFullYear() + '-' +
-               String(now.getUTCMonth() + 1).padStart(2, '0') + '-' +
-               String(now.getUTCDate()).padStart(2, '0') + ' ' +
-               String(now.getUTCHours()).padStart(2, '0') + ':' +
-               String(now.getUTCMinutes()).padStart(2, '0') + ':' +
-               String(now.getUTCSeconds()).padStart(2, '0');
+    const gmt7Time = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+
+    // Format date as YYYY-MM-DD HH:MM:SS using UTC methods on the new GMT+7 Date object
+    const date = gmt7Time.getUTCFullYear() + '-' +
+               String(gmt7Time.getUTCMonth() + 1).padStart(2, '0') + '-' +
+               String(gmt7Time.getUTCDate()).padStart(2, '0') + ' ' +
+               String(gmt7Time.getUTCHours()).padStart(2, '0') + ':' +
+               String(gmt7Time.getUTCMinutes()).padStart(2, '0') + ':' +
+               String(gmt7Time.getUTCSeconds()).padStart(2, '0');
+
+    const values = [[
+        date,
+        userId || 'N/A',
+        country || 'N/A',
+        campaignCount || 0,
+        campaignNames || 'N/A'
+    ]];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: sheetName,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[date, userId, country, campaignCount, campaignNames]],
+        values: values,
       },
     });
 
@@ -41,6 +56,7 @@ exports.handler = async function(event) {
     };
   } catch (error) {
     console.error('Error tracking usage:', error);
+    console.error('Event body that caused error:', event.body);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: 'Error tracking usage.', error: error.message }),
