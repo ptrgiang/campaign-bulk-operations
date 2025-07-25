@@ -326,7 +326,8 @@ const validateRequiredFields = () => {
     const invalid = [];
     const seen = new Set();
     const keywords = rawKeywords.trim().split('\n').filter(Boolean);
-    const specialCharsRegex = /[!@#$%^*()_+={}\[\]|\\:;"<>,?\/~`]/;
+    const specialCharsRegex = /[!@#$%^*()_={}\[\]|\\:;"<>,?/~`]/;
+    const spacedHyphenPlusRegex = / [-+] /;
 
     for (const kw of keywords) {
       const originalKw = kw;
@@ -338,7 +339,9 @@ const validateRequiredFields = () => {
       }
       seen.add(cleanedKw);
 
-      if (specialCharsRegex.test(cleanedKw)) {
+      if (spacedHyphenPlusRegex.test(cleanedKw)) {
+        reason = 'Contains special characters';
+      } else if (specialCharsRegex.test(cleanedKw)) {
         reason = 'Contains special characters';
       } else {
         const wordCount = cleanedKw.split(/\s+/).filter(Boolean).length;
