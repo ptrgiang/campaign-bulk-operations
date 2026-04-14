@@ -1108,3 +1108,29 @@ textarea:focus {
 .dark-mode .preview-tabs .btn:hover {
   background: #4b5563;
 }
+
+/* PT Category loading spinner */
+.pt-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.pt-loading::before {
+  content: '';
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: pt-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pt-spin {
+  to { transform: rotate(360deg); }
+}

@@ -134,8 +134,39 @@
                   </select>
                 </div>
 
-                <div class="form-group">
-                  <label for="portfolioId">
+                <div class="form-group" style="min-width:0;">
+                  <label>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                      <line x1="8" y1="21" x2="16" y2="21"></line>
+                      <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                    Portfolio
+                    <span class="optional">(optional)</span>
+                  </label>
+                  <div id="portfolioSelected" style="display:none;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;border:1px solid var(--border,#e5e7eb);border-radius:0.375rem;width:100%;box-sizing:border-box;">
+                    <span id="portfolioSelectedName" style="flex:1;font-size:0.875rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                    <button type="button" onclick="clearPortfolio()" style="background:none;border:none;cursor:pointer;color:var(--text-muted,#6b7280);font-size:1.1rem;line-height:1;padding:0 0.2rem;flex-shrink:0;" title="Clear">×</button>
+                  </div>
+                  <div id="portfolioSearchGroup" style="position:relative;width:100%;">
+                    <input
+                      type="text"
+                      id="portfolioSearch"
+                      class="form-control"
+                      style="width:100%;box-sizing:border-box;"
+                      placeholder="Search portfolio..."
+                      oninput="onPortfolioInput()"
+                      onfocus="showPortfolioResults()"
+                      onblur="hidePortfolioResultsDelayed()"
+                      autocomplete="off"
+                    />
+                    <div id="portfolioResults" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;max-height:200px;overflow-y:auto;border:1px solid var(--border,#e5e7eb);border-top:none;border-radius:0 0 0.375rem 0.375rem;background:var(--bg,#fff);box-shadow:0 4px 6px -1px rgba(0,0,0,.1);"></div>
+                  </div>
+                  <input type="hidden" id="portfolioId" />
+                </div>
+
+                <div class="form-group" id="sitesSection">
+                  <label for="sites">
                     <svg
                       width="16"
                       height="16"
@@ -144,49 +175,16 @@
                       stroke="currentColor"
                       stroke-width="2"
                     >
-                      <rect
-                        x="2"
-                        y="3"
-                        width="20"
-                        height="14"
-                        rx="2"
-                        ry="2"
-                      ></rect>
-                      <line x1="8" y1="21" x2="16" y2="21"></line>
-                      <line x1="12" y1="17" x2="12" y2="21"></line>
+                      <rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect>
+                      <line x1="2" y1="9" x2="22" y2="9"></line>
+                      <line x1="12" y1="9" x2="12" y2="21"></line>
                     </svg>
-                    Portfolio ID
-                    <span class="optional">(optional)</span>
+                    Sites
                   </label>
-                  <div class="input-group">
-                    <input
-                      type="text"
-                      id="portfolioId"
-                      class="form-control"
-                      placeholder="Enter portfolio ID"
-                    />
-                    <button
-                      type="button"
-                      class="btn-secondary"
-                      onclick="window.open('https://docs.google.com/spreadsheets/d/e/2PACX-1vSGHt7CfqrunDBeX-eOXTCsNlk-QnsttLhF3YtS10s11IUWXm_CJtbhFlVEG-6_J2MaAwSH85rGwL-u/pubhtml?gid=1772766919&single=true')"
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      >
-                        <path
-                          d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        ></path>
-                        <polyline points="15,3 21,3 21,9"></polyline>
-                        <line x1="10" y1="14" x2="21" y2="3"></line>
-                      </svg>
-                      Check
-                    </button>
-                  </div>
+                  <select id="sites" class="form-control">
+                    <option value="Amazon and Beyond">Amazon and Beyond</option>
+                    <option value="Amazon Business">Amazon Business</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -684,49 +682,69 @@
               </div>
             </div>
 
-            <!-- Competitor ASINs Section -->
+            <!-- Product Targeting Section -->
             <div class="section hidden" id="ptTargetingSection">
               <div class="section-header">
                 <div class="section-icon emerald">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <circle cx="12" cy="12" r="6"></circle>
                     <circle cx="12" cy="12" r="2"></circle>
                   </svg>
                 </div>
-                <h2>Competitor Targeting</h2>
+                <h2>Product Targeting</h2>
               </div>
+
+              <!-- Predicate selector -->
               <div class="form-group">
-                <label for="competitorAsins">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="M21 21l-4.35-4.35"></path>
-                  </svg>
-                  Competitor ASINs
-                  <span class="required">*</span>
-                </label>
-                <p class="field-hint">One ASIN per line</p>
+                <label for="ptPredicate">Targeting Predicate <span class="required">*</span></label>
+                <select id="ptPredicate" class="form-control" onchange="updatePtPredicateUI()">
+                  <option value="asin">ASIN</option>
+                  <option value="category">Category</option>
+                </select>
+              </div>
+
+              <!-- ASIN textarea (shown when predicate = asin) -->
+              <div id="ptAsinSection" class="form-group">
+                <label>ASINs <span class="required">*</span></label>
+                <p class="field-hint">One per line</p>
                 <textarea
                   id="competitorAsins"
                   class="form-control"
                   rows="6"
-                  placeholder="Enter competitor ASINs, one per line..."
-                  required
+                  placeholder="Enter ASINs, one per line..."
                 ></textarea>
+              </div>
+
+              <!-- Category search (shown when predicate = category) -->
+              <div id="ptCategorySection" class="hidden">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:stretch;">
+                  <!-- Left: search + results -->
+                  <div class="form-group" style="min-width:0;">
+                    <label>Search Categories <span class="required">*</span></label>
+                    <input
+                      type="text"
+                      id="ptCategorySearch"
+                      class="form-control"
+                      placeholder="Search..."
+                      oninput="onPtCategoryInput()"
+                    />
+                    <div
+                      id="ptCategoryResults"
+                      style="height:260px;overflow-y:auto;border:1px solid var(--border,#e5e7eb);border-radius:0.375rem;"
+                    ></div>
+                  </div>
+                  <!-- Right: added categories -->
+                  <div class="form-group" style="min-width:0;">
+                    <label>Added (<span id="ptSelectedCount">0</span>)</label>
+                    <div
+                      id="ptSelectedCategoriesGroup"
+                      style="height:calc(260px + 2.625rem + 0.5rem);overflow-y:auto;border:1px solid var(--border,#e5e7eb);border-radius:0.375rem;padding:0 0.5rem;"
+                    >
+                      <div id="ptSelectedCategories"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -2,6 +2,10 @@
 
 // Global variables
 let campaignData = [];
+let ptCategorySelections = [];
+let ptCategoryCache = {};
+let ptSearchDebounce = null;
+let ptLastSearchResults = [];
 
 // Default Excel columns
 const sponsoredBrandsColumns = [
@@ -64,6 +68,7 @@ const sponsoredProductsColumns = [
   "Placement",
   "Percentage",
   "Product Targeting Expression",
+  "Sites",
 ];
 
 // DOM Elements
@@ -178,6 +183,10 @@ const elements = {
   // Product Name
   productNameSection: document.getElementById("productNameSection"),
   productName: document.getElementById("productName"),
+
+  // Sites
+  sitesSection: document.getElementById("sitesSection"),
+  sites: document.getElementById("sites"),
 };
 
 // UI Functions
@@ -206,7 +215,15 @@ const resetOptionalFields = () => {
   if (tableBody) {
     tableBody.innerHTML = "";
   }
-  
+
+  ptCategorySelections = [];
+  ptLastSearchResults = [];
+  renderSelectedCategories();
+  const ptSearchEl = document.getElementById("ptCategorySearch");
+  if (ptSearchEl) ptSearchEl.value = "";
+  const ptResultsEl = document.getElementById("ptCategoryResults");
+  if (ptResultsEl) ptResultsEl.innerHTML = "";
+
   hideError();
   hideWarning();
 };
@@ -221,6 +238,10 @@ const updateFormUI = () => {
   elements.keywordsSection.classList.add("hidden");
   elements.productTargetingSection.classList.add("hidden");
   elements.ptTargetingSection.classList.add("hidden");
+
+  // Show Sites only for SP campaign types
+  const isSPType = !campaignType.startsWith("video-");
+  elements.sitesSection.classList.toggle("hidden", !isSPType);
   document.getElementById("negativeKeywordsSection").classList.remove("hidden");
   document.getElementById("researchNegativeKeywordsSection").classList.add("hidden");
   document.getElementById("customKeywordsSection").classList.add("hidden");
@@ -453,6 +474,8 @@ const validateRequiredFields = () => {
       portfolioId: elements.portfolioId.value.trim(),
       country: elements.country.value,
       campaignType: elements.campaignType.value,
+      sites: elements.sites.value,
+      ptPredicate: document.getElementById("ptPredicate").value,
     },
     errors,
     warnings: allInvalidKeywords,
@@ -488,6 +511,234 @@ const hideWarning = () => {
   elements.warningAlert.classList.add("hidden");
 };
 
+// PT Predicate UI + Category Search
+const getCategoryProfileId = () =>
+  elements.country.value === "CA" ? "4490498188879079" : "2253253700831276";
+
+const flattenCategories = (cats, parentPath = "") => {
+  const result = [];
+  for (const cat of cats) {
+    const path = parentPath ? `${parentPath} / ${cat.na}` : cat.na;
+    result.push({ id: cat.id, name: cat.na, path });
+    if (cat.ch && cat.ch.length > 0) result.push(...flattenCategories(cat.ch, path));
+  }
+  return result;
+};
+
+const loadCategoryData = async () => {
+  const profileId = getCategoryProfileId();
+  if (ptCategoryCache[profileId]) return ptCategoryCache[profileId];
+  const res = await fetch(
+    `https://amazon-api.bluestars.vn/xnurta/common/sponsored-categories?profile_id=${profileId}&currency=local`,
+    { headers: { "X-API-Key": "pYytfaENoXvBQ4tTi15Qm-HX2KlCPzyZlWWUC7iRTGQ" } }
+  );
+  const json = await res.json();
+  const flat = flattenCategories(json.data.body);
+  ptCategoryCache[profileId] = flat;
+  return flat;
+};
+
+const updatePtPredicateUI = () => {
+  const isAsin = document.getElementById("ptPredicate").value === "asin";
+  document.getElementById("ptAsinSection").classList.toggle("hidden", !isAsin);
+  document.getElementById("ptCategorySection").classList.toggle("hidden", isAsin);
+  if (!isAsin) {
+    const profileId = getCategoryProfileId();
+    if (!ptCategoryCache[profileId]) {
+      const resultsEl = document.getElementById("ptCategoryResults");
+      if (resultsEl) resultsEl.innerHTML = '<div class="pt-loading">Loading categories\u2026</div>';
+    }
+    loadCategoryData().then(searchCategories);
+  }
+};
+
+// Fuzzy word-prefix match: "capacitor" matches "Capacitors" and "Capacitance"
+const commonPrefixLen = (a, b) => {
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  return i;
+};
+
+const wordFuzzyMatch = (nameWord, queryWord) => {
+  if (nameWord.startsWith(queryWord)) return true;
+  const overlap = commonPrefixLen(nameWord, queryWord);
+  return overlap >= Math.max(4, Math.ceil(queryWord.length * 0.75));
+};
+
+const matchCategories = (categories, rawQuery) => {
+  const query = rawQuery.toLowerCase().trim();
+  const queryWords = query.split(/\s+/).filter(Boolean);
+  const matches = categories.filter(c => {
+    const nameWords = c.name.toLowerCase().split(/\s+/);
+    return queryWords.every(qw => nameWords.some(nw => wordFuzzyMatch(nw, qw)));
+  });
+  // Exact substring matches first, then shorter names
+  matches.sort((a, b) => {
+    const aEx = a.name.toLowerCase().includes(query);
+    const bEx = b.name.toLowerCase().includes(query);
+    if (aEx !== bEx) return aEx ? -1 : 1;
+    return a.name.length - b.name.length;
+  });
+  return matches;
+};
+
+const renderCategoryResults = () => {
+  const resultsEl = document.getElementById("ptCategoryResults");
+  if (!resultsEl) return;
+  if (ptLastSearchResults.length === 0) { resultsEl.innerHTML = ""; return; }
+  resultsEl.innerHTML = ptLastSearchResults.map(c => {
+    const breadcrumb = c.path.split(" / ").slice(0, -1).join(" / ");
+    const isAdded = ptCategorySelections.some(s => s.id === c.id);
+    const safeName = c.name.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    const safePath = c.path.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    return `<div style="padding:0.5rem 0.75rem;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:center;gap:0.5rem;">
+      <div style="flex:1;">
+        ${breadcrumb ? `<div style="font-size:0.75rem;color:var(--text-muted,#6b7280);">${breadcrumb}</div>` : ""}
+        <div style="font-size:0.875rem;font-weight:600;">${c.name}</div>
+      </div>
+      <button type="button"
+        onclick="addCategory(${c.id}, '${safeName}', '${safePath}')"
+        style="font-size:0.8rem;padding:0.2rem 0.6rem;border-radius:0.25rem;cursor:pointer;border:1px solid var(--border,#e5e7eb);background:none;${isAdded ? "opacity:0.4;" : ""}"
+        ${isAdded ? "disabled" : ""}>${isAdded ? "Added" : "Add"}</button>
+    </div>`;
+  }).join("");
+};
+
+const renderSelectedCategories = () => {
+  const container = document.getElementById("ptSelectedCategories");
+  if (!container) return;
+  const countEl = document.getElementById("ptSelectedCount");
+  if (countEl) countEl.textContent = ptCategorySelections.length;
+  container.innerHTML = ptCategorySelections.length === 0
+    ? `<div style="color:var(--text-muted,#6b7280);font-size:0.82rem;padding:0.5rem 0;">No categories added.</div>`
+    : ptCategorySelections.map((c, i) =>
+        `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;border-bottom:1px solid var(--border,#e5e7eb);">
+          <span style="flex:1;font-size:0.85rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</span>
+          <button type="button" onclick="removePtCategory(${i})" style="background:none;border:none;cursor:pointer;color:var(--error,#ef4444);font-size:1.1rem;line-height:1;padding:0 0.25rem;flex-shrink:0;" title="Remove">×</button>
+        </div>`
+      ).join("");
+  elements.competitorAsins.value = ptCategorySelections.map(c => c.id).join("\n");
+};
+
+const addCategory = (id, name, path) => {
+  if (ptCategorySelections.some(c => c.id === id)) return;
+  ptCategorySelections.push({ id, name, path });
+  renderSelectedCategories();
+  renderCategoryResults(); // re-render only, no fetch
+};
+
+const removePtCategory = (index) => {
+  ptCategorySelections.splice(index, 1);
+  renderSelectedCategories();
+  renderCategoryResults(); // re-render only, no fetch
+};
+
+const searchCategories = async () => {
+  const query = document.getElementById("ptCategorySearch").value.trim();
+  const resultsEl = document.getElementById("ptCategoryResults");
+  try {
+    const categories = await loadCategoryData();
+    if (!query) {
+      // Show all leaf/top-level categories sorted by name when no query
+      ptLastSearchResults = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      ptLastSearchResults = matchCategories(categories, query);
+    }
+    if (ptLastSearchResults.length === 0) {
+      resultsEl.innerHTML = `<div style="padding:0.75rem;color:var(--text-muted,#6b7280);font-size:0.85rem;">No categories found.</div>`;
+      return;
+    }
+    renderCategoryResults();
+  } catch (e) {
+    resultsEl.innerHTML = `<div style="padding:0.75rem;color:var(--error,#ef4444);font-size:0.85rem;">Error loading categories.</div>`;
+  }
+};
+
+const onPtCategoryInput = () => {
+  clearTimeout(ptSearchDebounce);
+  ptSearchDebounce = setTimeout(searchCategories, 300);
+};
+
+// Portfolio Search
+let portfolioCache = null;
+let portfolioSearchDebounce = null;
+
+const loadPortfolioData = async () => {
+  if (portfolioCache) return portfolioCache;
+  const res = await fetch(
+    "https://amazon-api.bluestars.vn/xnurta/portfolios",
+    { headers: { "X-API-Key": "pYytfaENoXvBQ4tTi15Qm-HX2KlCPzyZlWWUC7iRTGQ" } }
+  );
+  const json = await res.json();
+  portfolioCache = json.data.list;
+  return portfolioCache;
+};
+
+const getFilteredPortfolios = (query) => {
+  const country = elements.country.value;
+  const q = query.toLowerCase().trim();
+  return (portfolioCache || [])
+    .filter(p => p.countryCode === country && (!q || p.name.toLowerCase().includes(q)));
+};
+
+const renderPortfolioResults = (results) => {
+  const el = document.getElementById("portfolioResults");
+  if (!results.length) {
+    el.innerHTML = `<div style="padding:0.5rem 0.75rem;color:var(--text-muted,#6b7280);font-size:0.85rem;">No portfolios found.</div>`;
+  } else {
+    el.innerHTML = results.map(p => {
+      const safeName = p.name.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      return `<div style="padding:0.45rem 0.75rem;border-bottom:1px solid var(--border,#e5e7eb);cursor:pointer;font-size:0.875rem;"
+        onmousedown="selectPortfolio(${p.amazonPortfolioId}, '${safeName}')"
+        onmouseover="this.style.background='var(--bg-secondary,#f3f4f6)'"
+        onmouseout="this.style.background=''">${p.name}</div>`;
+    }).join("");
+  }
+  el.style.display = "";
+};
+
+const showPortfolioResults = async () => {
+  if (!portfolioCache) await loadPortfolioData();
+  renderPortfolioResults(getFilteredPortfolios(document.getElementById("portfolioSearch").value));
+};
+
+const hidePortfolioResults = () => {
+  document.getElementById("portfolioResults").style.display = "none";
+};
+
+const hidePortfolioResultsDelayed = () => setTimeout(hidePortfolioResults, 150);
+
+const selectPortfolio = (amazonPortfolioId, name) => {
+  elements.portfolioId.value = amazonPortfolioId;
+  document.getElementById("portfolioSelectedName").textContent = name;
+  document.getElementById("portfolioSelected").style.display = "flex";
+  document.getElementById("portfolioSearchGroup").style.display = "none";
+  hidePortfolioResults();
+};
+
+const clearPortfolio = () => {
+  elements.portfolioId.value = "";
+  document.getElementById("portfolioSearch").value = "";
+  document.getElementById("portfolioSelected").style.display = "none";
+  document.getElementById("portfolioSearchGroup").style.display = "";
+};
+
+const updatePortfolioDisplay = (amazonPortfolioId) => {
+  if (!amazonPortfolioId) { clearPortfolio(); return; }
+  const p = portfolioCache
+    ? portfolioCache.find(p => String(p.amazonPortfolioId) === String(amazonPortfolioId))
+    : null;
+  selectPortfolio(amazonPortfolioId, p ? p.name : `ID: ${amazonPortfolioId}`);
+};
+
+const onPortfolioInput = () => {
+  clearTimeout(portfolioSearchDebounce);
+  portfolioSearchDebounce = setTimeout(async () => {
+    if (!portfolioCache) await loadPortfolioData();
+    renderPortfolioResults(getFilteredPortfolios(document.getElementById("portfolioSearch").value));
+  }, 200);
+};
+
 const showSuccess = (message = "Campaign added successfully!") => {
   const successSpan = elements.successAlert.querySelector("span");
 
@@ -514,7 +765,7 @@ const showSuccess = (message = "Campaign added successfully!") => {
 // Campaign Management Functions
 const entityBuilder = {
   // SP Functions
-  createSpCampaign(campaignId, portfolioId, today, budget, biddingStrategy, targetingType) {
+  createSpCampaign(campaignId, portfolioId, today, budget, biddingStrategy, targetingType, sites) {
     return ensureDefaultColumns({
       Product: "Sponsored Products",
       Entity: "Campaign",
@@ -527,6 +778,7 @@ const entityBuilder = {
       State: "Enabled",
       "Daily Budget": budget,
       "Bidding Strategy": biddingStrategy,
+      "Sites": sites === "Amazon Business" ? "Amazon Business" : "",
     }, "sp");
   },
   createSpBiddingAdjustment(campaignId, placement, percentage) {
@@ -715,6 +967,8 @@ const addCampaignToCampaignData = (formData) => {
     country,
     campaignType,
     productName,
+    sites,
+    ptPredicate,
   } = formData;
 
   const today = getCurrentDate();
@@ -754,7 +1008,7 @@ const addCampaignToCampaignData = (formData) => {
       substitutesBid
     );
 
-    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Auto");
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Auto", sites);
     spCampaign.campaignType = campaignType;
     spCampaign.country = country;
     spCampaign.asin = asin;
@@ -775,7 +1029,7 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, "Auto", keyword, "negativePhrase"));
     });
   } else if (campaignType === "custom") {
-    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual", sites);
     spCampaign.campaignType = campaignType;
     spCampaign.country = country;
     spCampaign.asin = asin;
@@ -801,7 +1055,7 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, "Custom", keyword, "negativePhrase"));
     });
   } else if (campaignType === "research") {
-    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual", sites);
     spCampaign.campaignType = campaignType;
     spCampaign.country = country;
     spCampaign.asin = asin;
@@ -821,7 +1075,7 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSpNegativeKeyword(campaignId, "Research", keyword, "negativePhrase"));
     });
   } else if (campaignType === "performance") {
-    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual", sites);
     spCampaign.campaignType = campaignType;
     spCampaign.country = country;
     spCampaign.asin = asin;
@@ -835,7 +1089,7 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSpKeyword(campaignId, "Performance", keyword, "exact", 0.5));
     });
   } else if (campaignType === "pt") {
-    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual", sites);
     spCampaign.campaignType = campaignType;
     spCampaign.country = country;
     spCampaign.asin = asin;
@@ -845,16 +1099,18 @@ const addCampaignToCampaignData = (formData) => {
     newCampaignData.push(entityBuilder.createSpBiddingAdjustment(campaignId, "placement product page", 0));
     newCampaignData.push(entityBuilder.createSpAdGroup(campaignId, "PT", "PT", 0.25));
     newCampaignData.push(entityBuilder.createSpProductAd(campaignId, "PT", sku));
-    competitorAsins.forEach((asin) => {
-      newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "PT", `asin="${asin}"`, 0.25));
+    competitorAsins.forEach((val) => {
+      const expr = ptPredicate === "category" ? `category="${val}"` : `asin="${val}"`;
+      newCampaignData.push(entityBuilder.createSpProductTargeting(campaignId, "PT", expr, 0.25));
     });
   } else if (campaignType === "video-pt") {
     const sbCampaign = entityBuilder.createSbCampaign(campaignId, portfolioId, today, 10, brandEntityId, asin, videoId);
     sbCampaign.campaignType = campaignType;
     sbCampaign.country = country;
     newCampaignData.push(sbCampaign);
-    competitorAsins.forEach((asin) => {
-      newCampaignData.push(entityBuilder.createSbProductTargeting(campaignId, `asin="${asin}"`, 0.25));
+    competitorAsins.forEach((val) => {
+      const expr = ptPredicate === "category" ? `category="${val}"` : `asin="${val}"`;
+      newCampaignData.push(entityBuilder.createSbProductTargeting(campaignId, expr, 0.25));
     });
   } else if (campaignType.startsWith("video-")) {
     const sbCampaign = entityBuilder.createSbCampaign(campaignId, portfolioId, today, 10, brandEntityId, asin, videoId);
@@ -871,7 +1127,7 @@ const addCampaignToCampaignData = (formData) => {
       newCampaignData.push(entityBuilder.createSbNegativeKeyword(campaignId, keyword, "negativePhrase"));
     });
   } else if (campaignType === "sp") {
-    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual");
+    const spCampaign = entityBuilder.createSpCampaign(campaignId, portfolioId, today, 10, "Dynamic bids - down only", "Manual", sites);
     spCampaign.campaignType = campaignType;
     spCampaign.country = country;
     spCampaign.productName = productName;
@@ -1152,16 +1408,29 @@ const copyCampaignToForm = (campaignId) => {
   updateFormUI(); // This will show the correct sections
 
   elements.country.value = country || 'US';
+  elements.sites.value = mainCampaign["Sites"] === "Amazon Business" ? "Amazon Business" : "Amazon and Beyond";
   elements.productNumber.value = (mainCampaign["Campaign Name"] || campaignId).split(" ")[0] || "";
   elements.sku.value = (mainCampaign["SKU"] || (mainCampaign["Campaign Name"] || campaignId).split(" ")[1]) || "";
-  elements.portfolioId.value = portfolioId || portfolioID || "";
+  updatePortfolioDisplay(portfolioId || portfolioID || "");
   elements.asin.value = spAsin || creativeAsins || "";
 
   if (campaignType === 'video-pt') {
     elements.videoId.value = videoId || "";
-    elements.competitorAsins.value = campaignEntries
-      .filter(e => e.Entity === 'Product targeting' && e["Product Targeting Expression"].startsWith('asin="'))
-      .map(e => e["Product Targeting Expression"].replace(/asin=|"/g, "")).join('\n');
+    const vptExprs = campaignEntries.filter(e => e.Entity === 'Product targeting').map(e => e["Product Targeting Expression"]);
+    const vptPredicate = (vptExprs[0] || '').startsWith('category=') ? 'category' : 'asin';
+    document.getElementById("ptPredicate").value = vptPredicate;
+    updatePtPredicateUI();
+    if (vptPredicate === 'asin') {
+      elements.competitorAsins.value = vptExprs.map(e => e.replace(/^asin="|"$/g, '')).join('\n');
+    } else {
+      const cached = ptCategoryCache[getCategoryProfileId()];
+      ptCategorySelections = vptExprs.map(e => {
+        const id = parseInt(e.replace(/^category="|"$/g, ''));
+        const found = cached ? cached.find(c => c.id === id) : null;
+        return { id, name: found ? found.name : `ID: ${id}`, path: found ? found.path : String(id) };
+      });
+      renderSelectedCategories();
+    }
   }
   else if (campaignType.startsWith("video-")) {
     elements.videoId.value = videoId || "";
@@ -1184,9 +1453,21 @@ const copyCampaignToForm = (campaignId) => {
     elements.negativeExactKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative keyword' && e['Match Type'] === 'negativeExact').map(e => e['Keyword Text']).join('\n');
     elements.negativePhraseKeywords.value = campaignEntries.filter(e => e.Entity === 'Negative keyword' && e['Match Type'] === 'negativePhrase').map(e => e['Keyword Text']).join('\n');
   } else if (campaignType === 'pt') {
-    elements.competitorAsins.value = campaignEntries
-      .filter(e => e.Entity === 'Product targeting' && e["Product Targeting Expression"].startsWith('asin="'))
-      .map(e => e["Product Targeting Expression"].replace(/asin=|"/g, "")).join('\n');
+    const ptExprs = campaignEntries.filter(e => e.Entity === 'Product targeting').map(e => e["Product Targeting Expression"]);
+    const ptPred = (ptExprs[0] || '').startsWith('category=') ? 'category' : 'asin';
+    document.getElementById("ptPredicate").value = ptPred;
+    updatePtPredicateUI();
+    if (ptPred === 'asin') {
+      elements.competitorAsins.value = ptExprs.map(e => e.replace(/^asin="|"$/g, '')).join('\n');
+    } else {
+      const cached = ptCategoryCache[getCategoryProfileId()];
+      ptCategorySelections = ptExprs.map(e => {
+        const id = parseInt(e.replace(/^category="|"$/g, ''));
+        const found = cached ? cached.find(c => c.id === id) : null;
+        return { id, name: found ? found.name : `ID: ${id}`, path: found ? found.path : String(id) };
+      });
+      renderSelectedCategories();
+    }
   } else if (campaignType === 'custom') {
     elements.exactKeywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Match Type'] === 'exact').map(e => e['Keyword Text']).join('\n');
     elements.phraseKeywords.value = campaignEntries.filter(e => e.Entity === 'Keyword' && e['Match Type'] === 'phrase').map(e => e['Keyword Text']).join('\n');
@@ -1865,6 +2146,7 @@ const downloadExcel = async () => {
 const clearForm = () => {
   showConfirmation("Are you sure you want to clear the form?", () => {
     elements.form.reset();
+    clearPortfolio();
     hideError();
   });
 };
@@ -1978,6 +2260,13 @@ const initializeEventListeners = () => {
 
   // Form events
   elements.campaignType.addEventListener("change", updateFormUI);
+  elements.country.addEventListener("change", () => {
+    const currentId = elements.portfolioId.value;
+    if (currentId && portfolioCache) {
+      const p = portfolioCache.find(p => String(p.amazonPortfolioId) === String(currentId));
+      if (p && p.countryCode !== elements.country.value) clearPortfolio();
+    }
+  });
 
   // Alert events
   elements.closeError.addEventListener("click", hideError);
@@ -2046,4 +2335,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeSortableList();
   applyInitialTheme();
   updateFormUI();
+  updatePtPredicateUI();
+  renderSelectedCategories();
+  loadPortfolioData();
 });
