@@ -529,8 +529,7 @@ const loadCategoryData = async () => {
   const profileId = getCategoryProfileId();
   if (ptCategoryCache[profileId]) return ptCategoryCache[profileId];
   const res = await fetch(
-    `https://amazon-api.bluestars.vn/xnurta/common/sponsored-categories?profile_id=${profileId}&currency=local`,
-    { headers: { "X-API-Key": "pYytfaENoXvBQ4tTi15Qm-HX2KlCPzyZlWWUC7iRTGQ" } }
+    `/.netlify/functions/xnurta-proxy?path=/xnurta/common/sponsored-categories&profile_id=${profileId}&currency=local`
   );
   const json = await res.json();
   const flat = flattenCategories(json.data.body);
@@ -666,8 +665,7 @@ let portfolioSearchDebounce = null;
 const loadPortfolioData = async () => {
   if (portfolioCache) return portfolioCache;
   const res = await fetch(
-    "https://amazon-api.bluestars.vn/xnurta/portfolios",
-    { headers: { "X-API-Key": "pYytfaENoXvBQ4tTi15Qm-HX2KlCPzyZlWWUC7iRTGQ" } }
+    "/.netlify/functions/xnurta-proxy?path=/xnurta/portfolios"
   );
   const json = await res.json();
   portfolioCache = json.data.list;
