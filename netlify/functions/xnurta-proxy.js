@@ -15,8 +15,14 @@ exports.handler = async function(event) {
   const qsStr = qs.toString();
   const url = `https://amazon-api.bluestars.vn${path}${qsStr ? '?' + qsStr : ''}`;
 
+  const isPost = event.httpMethod === 'POST';
   const res = await fetch(url, {
-    headers: { 'X-API-Key': process.env.XNURTA_API_KEY },
+    method: isPost ? 'POST' : 'GET',
+    headers: {
+      'X-API-Key': process.env.XNURTA_API_KEY,
+      ...(isPost && { 'Content-Type': 'application/json' }),
+    },
+    ...(isPost && event.body && { body: event.body }),
   });
 
   const body = await res.text();

@@ -665,7 +665,12 @@ let portfolioSearchDebounce = null;
 const loadPortfolioData = async () => {
   if (portfolioCache) return portfolioCache;
   const res = await fetch(
-    "/.netlify/functions/xnurta-proxy?path=/xnurta/portfolios"
+    "/.netlify/functions/xnurta-proxy?path=/xnurta/portfolios",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile_ids: ["258179238858578", "2253253700831276", "4490498188879079"], search: "" }),
+    }
   );
   const json = await res.json();
   portfolioCache = json.data.list;
